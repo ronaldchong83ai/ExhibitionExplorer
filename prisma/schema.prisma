@@ -1,0 +1,178 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  contact      String
+  passwordHash String
+  role         String   // VISITOR, EXHIBITOR, ADMIN
+  provider     String   // CREDENTIALS, GOOGLE, LINKEDIN, APPLE
+  profilePic   String?
+  dob          String?
+  occupation   String?
+  citizenship  String?
+  createdAt    DateTime @default(now())
+}
+
+model Exhibition {
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  eventPeriodFrom DateTime
+  eventPeriodTo   DateTime
+  details         String
+  enabled         Boolean  @default(true)
+  createdBy       String
+  createdAt       DateTime @default(now())
+}
+
+model HomePageInfo {
+  id           String   @id @default(uuid())
+  exhibitionId String
+  title        String
+  type         String   // EVENT_INFO, ANNOUNCEMENT, IMPORTANT_NOTICE
+  description  String
+  displayFrom  DateTime
+  displayTo    DateTime
+  details      String
+  createdAt    DateTime @default(now())
+}
+
+model StageEvent {
+  id           String   @id @default(uuid())
+  exhibitionId String
+  title        String
+  periodFrom   DateTime
+  periodTo     DateTime
+  stageNumber  String
+  speakerNames String[]
+  details      String
+  createdAt    DateTime @default(now())
+}
+
+model Exhibitor {
+  id             String   @id @default(uuid())
+  exhibitionId   String
+  name           String
+  description    String
+  boothNumber    String
+  imageUrl       String
+  details        String
+  allowedUserIds String[]
+  createdAt      DateTime @default(now())
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  exhibitorId String
+  title       String
+  imageUrl    String
+  description String
+  details     String
+  createdAt   DateTime @default(now())
+}
+
+model PurchaseConversion {
+  id        String @id @default(uuid())
+  productId String
+  date      String
+  value     Int
+}
+
+model VenueMap {
+  id           String   @id @default(uuid())
+  exhibitionId String
+  imageUrl     String
+  uploadedAt   DateTime @default(now())
+}
+
+model Voucher {
+  id              String   @id @default(uuid())
+  exhibitionId    String
+  title           String
+  description     String
+  details         String
+  requiredScanIds String[]
+  createdAt       DateTime @default(now())
+}
+
+model VoucherScan {
+  id        String   @id @default(uuid())
+  voucherId String
+  userId    String
+  scanId    String
+  scannedAt DateTime @default(now())
+}
+
+model Favourite {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // EXHIBITOR, STAGE_EVENT
+  targetId  String
+  createdAt DateTime @default(now())
+}
+
+model ActionLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String   // SCAN_QR, REDEEM_COUPON, etc.
+  details   String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model NotificationSetting {
+  id               String   @id @default(uuid())
+  userId           String
+  hoursBeforeEvent Int
+  createdAt        DateTime @default(now())
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String
+  keys      String
+  createdAt DateTime @default(now())
+}
+
+model DbVersion {
+  key       String   @id
+  version   String
+  updatedAt DateTime @updatedAt
+}
+
+model Feedback {
+  id           String   @id @default(uuid())
+  userId       String
+  userName     String
+  userEmail    String
+  content      String
+  exhibitionId String?
+  createdAt    DateTime @default(now())
+}
+
+model VoucherCollection {
+  id          String   @id @default(uuid())
+  voucherId   String
+  userId      String
+  collectedAt DateTime @default(now())
+
+  @@unique([voucherId, userId])
+}
+

@@ -1,7 +1,11 @@
-export default function Home() {
-  return (
-    <main>
-      <div>Hello world!</div>
-    </main>
-  );
+import { redirect } from 'next/navigation';
+import { getSession } from '@/lib/auth';
+
+export default async function RootPage() {
+  const session = await getSession();
+  if (session) {
+    redirect('/home');
+  } else {
+    redirect('/login');
+  }
 }

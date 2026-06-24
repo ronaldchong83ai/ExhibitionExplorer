@@ -1,0 +1,9 @@
+{
+  "appId": "com.exhibitionexplorer.app",
+  "appName": "ExhibitionExplorer",
+  "webDir": "public",
+  "server": {
+    "url": "http://143.47.99.151:3003",
+    "cleartext": true
+  }
+}
