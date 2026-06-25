@@ -1,10 +1,123 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import jsQR from 'jsqr';
 
 export default function ScannerPage() {
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [mode, setMode] = useState<'qr' | 'linkray'>('qr');
+  const [scanning, setScanning] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    // Stop scanning and release resources on unmount
+    return () => {
+      stopScanner();
+    };
+  }, []);
+
+  const startScanner = async () => {
+    setCameraError(null);
+    setScanResult(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' } // Prefer rear camera
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true'); // Required for iOS Safari
+        videoRef.current.play();
+        setScanning(true);
+        // Start loop
+        animationFrameRef.current = requestAnimationFrame(tick);
+      }
+    } catch (err: any) {
+      console.error('Camera access error:', err);
+      setCameraError('Could not access camera. Please ensure permissions are granted and you are using HTTPS.');
+    }
+  };
+
+  const stopScanner = () => {
+    setScanning(false);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const tick = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Set canvas dimensions matching current video frame
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+
+        // Draw current frame to canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Get image data and scan
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
+
+        if (code && code.data) {
+          setScanResult(code.data);
+          stopScanner();
+          // Play notification beep if possible (using browser Web Audio API)
+          playBeep();
+          return;
+        }
+      }
+    }
+
+    // Keep loop active
+    animationFrameRef.current = requestAnimationFrame(tick);
+  };
+
+  const playBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    } catch {
+      // AudioContext fails silently if user has not interacted or not supported
+    }
+  };
+
+  const handleToggleScanner = () => {
+    if (scanning) {
+      stopScanner();
+    } else {
+      startScanner();
+    }
+  };
 
   return (
     <div className="page-container">
@@ -12,32 +125,49 @@ export default function ScannerPage() {
 
       {/* Mode Tabs */}
       <div className="tabs">
-        <button className={`tab ${mode === 'qr' ? 'active' : ''}`} onClick={() => setMode('qr')}>
+        <button className={`tab ${mode === 'qr' ? 'active' : ''}`} onClick={() => { stopScanner(); setMode('qr'); }}>
           QR Code
         </button>
-        <button className={`tab ${mode === 'linkray' ? 'active' : ''}`} onClick={() => setMode('linkray')}>
+        <button className={`tab ${mode === 'linkray' ? 'active' : ''}`} onClick={() => { stopScanner(); setMode('linkray'); }}>
           LinkRay
         </button>
       </div>
 
       {mode === 'qr' ? (
         <div className="scanner-card card animate-scale-in">
-          <div className="camera-preview">
-            <div className="scan-frame">
-              <div className="scan-corner tl" />
-              <div className="scan-corner tr" />
-              <div className="scan-corner bl" />
-              <div className="scan-corner br" />
-              <div className="scan-line" />
+          {cameraError && (
+            <div className="error-banner animate-fade-in" style={{ marginBottom: 'var(--space-4)', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 'var(--radius-md)', color: 'rgb(248, 113, 113)', fontSize: 'var(--font-size-sm)' }}>
+              ⚠️ {cameraError}
             </div>
-            <p className="scan-instruction">Point camera at QR code</p>
+          )}
+
+          <div className="camera-preview">
+            {scanning ? (
+              <>
+                <video ref={videoRef} className="camera-video" playsInline />
+                <canvas ref={canvasRef} style={{ display: 'none' }} />
+                <div className="scan-frame">
+                  <div className="scan-corner tl" />
+                  <div className="scan-corner tr" />
+                  <div className="scan-corner bl" />
+                  <div className="scan-corner br" />
+                  <div className="scan-line" />
+                </div>
+                <p className="scan-instruction">Align QR code within the frame</p>
+              </>
+            ) : (
+              <div className="camera-placeholder" onClick={handleToggleScanner}>
+                <span className="camera-icon">📷</span>
+                <p className="scan-instruction">Tap to start camera</p>
+              </div>
+            )}
           </div>
           <button
-            className="btn btn-primary btn-full"
+            className={`btn ${scanning ? 'btn-secondary' : 'btn-primary'} btn-full`}
             style={{ marginTop: 'var(--space-4)' }}
-            onClick={() => setScanResult('DEMO-QR-' + Date.now())}
+            onClick={handleToggleScanner}
           >
-            Simulate Scan
+            {scanning ? 'Stop Scanner' : 'Start Scanner'}
           </button>
         </div>
       ) : (
@@ -88,11 +218,42 @@ export default function ScannerPage() {
           justify-content: center;
           position: relative;
           overflow: hidden;
+          border: 1px solid var(--color-border);
+        }
+        .camera-video {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          position: absolute;
+          top: 0;
+          left: 0;
+          z-index: 1;
+        }
+        .camera-placeholder {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          z-index: 1;
+          transition: background 0.2s;
+        }
+        .camera-placeholder:hover {
+          background: rgba(255, 255, 255, 0.03);
+        }
+        .camera-icon {
+          font-size: 3rem;
+          margin-bottom: var(--space-2);
+          opacity: 0.7;
         }
         .scan-frame {
           width: 200px;
           height: 200px;
           position: relative;
+          z-index: 2;
         }
         .scan-corner {
           position: absolute;
@@ -123,6 +284,7 @@ export default function ScannerPage() {
           bottom: var(--space-4);
           color: var(--color-text-tertiary);
           font-size: var(--font-size-sm);
+          z-index: 2;
         }
         .linkray-placeholder {
           display: flex;
