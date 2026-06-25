@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import jsQR from 'jsqr';
 import type { Exhibition, SessionUser } from '@/types';
 
 interface VoucherWithProgress {
@@ -29,6 +30,15 @@ export default function CouponsPage() {
   const [newVisitorEmail, setNewVisitorEmail] = useState('');
   const [collectionsLoading, setCollectionsLoading] = useState(false);
 
+  // Scanner states & refs for Redemptor email scan popup
+  const [scanning, setScanning] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
   // Load session user and selected exhibition from localStorage
   useEffect(() => {
     fetch('/api/auth/session')
@@ -41,6 +51,112 @@ export default function CouponsPage() {
     const saved = localStorage.getItem('selectedExhibitionId');
     if (saved) setSelectedExhibitionId(saved);
   }, []);
+
+  // Cleanup scanner on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const startScanner = async () => {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      streamRef.current = stream;
+      setScanning(true);
+      
+      // Wait for DOM layout
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.play().catch(e => console.error("Play failed:", e));
+          
+          if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+          }
+          animationFrameRef.current = requestAnimationFrame(tick);
+        }
+      }, 100);
+    } catch (err: any) {
+      console.error('Camera access error:', err);
+      setCameraError('Could not access camera. Please ensure permissions are granted and you are using HTTPS.');
+    }
+  };
+
+  const stopScanner = () => {
+    setScanning(false);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const playBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    } catch {}
+  };
+
+  const tick = () => {
+    if (!videoRef.current || !canvasRef.current) {
+      animationFrameRef.current = requestAnimationFrame(tick);
+      return;
+    }
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
+
+        if (code && code.data) {
+          const scannedEmail = code.data.trim();
+          stopScanner();
+          playBeep();
+          
+          if (scannedEmail) {
+            executeAddVisitor(scannedEmail);
+          }
+          return;
+        }
+      }
+    }
+    animationFrameRef.current = requestAnimationFrame(tick);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -82,20 +198,22 @@ export default function CouponsPage() {
     }
   };
 
-  const addVisitorToCollections = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeVoucherForCollections || !newVisitorEmail.trim()) return;
+  const executeAddVisitor = async (emailStr: string) => {
+    if (!activeVoucherForCollections || !emailStr) return;
 
     setCollectionsLoading(true);
     try {
       const res = await fetch(`/api/vouchers/${activeVoucherForCollections.id}/collections`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: newVisitorEmail.trim() })
+        body: JSON.stringify({ email: emailStr })
       }).then(r => r.json());
 
       if (res.success && res.data) {
-        setCollectedVisitors(prev => [res.data, ...prev]);
+        setCollectedVisitors(prev => {
+          if (prev.some(v => v.userId === res.data.userId)) return prev;
+          return [res.data, ...prev];
+        });
         setNewVisitorEmail('');
       } else {
         alert(res.error || "Failed to add visitor");
@@ -105,6 +223,18 @@ export default function CouponsPage() {
       alert("Failed to add visitor");
     } finally {
       setCollectionsLoading(false);
+    }
+  };
+
+  const addVisitorToCollections = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeVoucherForCollections) return;
+
+    const trimmedEmail = newVisitorEmail.trim();
+    if (!trimmedEmail) {
+      startScanner();
+    } else {
+      await executeAddVisitor(trimmedEmail);
     }
   };
 
@@ -214,7 +344,6 @@ export default function CouponsPage() {
                   placeholder="Enter visitor's email..."
                   value={newVisitorEmail}
                   onChange={e => setNewVisitorEmail(e.target.value)}
-                  required
                   style={{ flex: 1 }}
                   disabled={collectionsLoading}
                 />
@@ -254,6 +383,50 @@ export default function CouponsPage() {
               <div className="form-actions" style={{ marginTop: 'var(--space-4)' }}>
                 <button className="btn btn-secondary" type="button" onClick={() => setShowCollectionsModal(false)}>Close</button>
               </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {scanning && (
+        <>
+          <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={stopScanner} />
+          <div className="modal-content" style={{ zIndex: 1101, maxWidth: '360px' }}>
+            <div className="modal-handle" />
+            <div className="admin-form animate-scale-in" style={{ marginTop: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <h4 style={{ fontWeight: 600, fontSize: 'var(--font-size-base)', marginBottom: 'var(--space-3)', alignSelf: 'flex-start' }}>
+                📷 Scan Visitor QR Code
+              </h4>
+              
+              {cameraError && (
+                <div className="error-banner animate-fade-in" style={{ marginBottom: 'var(--space-4)', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 'var(--radius-md)', color: 'rgb(248, 113, 113)', fontSize: 'var(--font-size-sm)' }}>
+                  ⚠️ {cameraError}
+                </div>
+              )}
+
+              <div className="camera-preview" style={{ margin: 'var(--space-2) auto var(--space-4) auto' }}>
+                <video
+                  ref={videoRef}
+                  className="camera-video"
+                  playsInline
+                />
+                <canvas ref={canvasRef} style={{ display: 'none' }} />
+                <div className="scan-frame">
+                  <div className="scan-corner tl" />
+                  <div className="scan-corner tr" />
+                  <div className="scan-corner bl" />
+                  <div className="scan-corner br" />
+                  <div className="scan-line" />
+                </div>
+              </div>
+
+              <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', marginBottom: 'var(--space-4)' }}>
+                Align the visitor's profile QR code inside the frame to scan.
+              </p>
+
+              <button className="btn btn-secondary btn-full" onClick={stopScanner}>
+                Cancel
+              </button>
             </div>
           </div>
         </>
@@ -303,6 +476,58 @@ export default function CouponsPage() {
           font-size: var(--font-size-xs);
           color: var(--color-text-tertiary);
           margin-top: var(--space-2);
+        }
+        .camera-preview {
+          width: 240px;
+          height: 240px;
+          background: var(--color-bg-primary);
+          border-radius: var(--radius-lg);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+          border: 1px solid var(--color-border);
+        }
+        .camera-video {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          position: absolute;
+          top: 0;
+          left: 0;
+          z-index: 1;
+        }
+        .scan-frame {
+          width: 160px;
+          height: 160px;
+          position: relative;
+          z-index: 2;
+        }
+        .scan-corner { 
+          position: absolute;
+          width: 20px;
+          height: 20px;
+          border: 3px solid var(--color-accent-blue);
+        }
+        .scan-corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; border-radius: 4px 0 0 0; }
+        .scan-corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; border-radius: 0 4px 0 0; }
+        .scan-corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; border-radius: 0 0 0 4px; }
+        .scan-corner.br { bottom: 0; right: 0; border-left: none; border-top: none; border-radius: 0 0 4px 0; }
+        .scan-line {
+          position: absolute;
+          top: 0;
+          left: 10%;
+          right: 10%;
+          height: 2px;
+          background: var(--color-accent-blue);
+          box-shadow: 0 0 10px var(--color-accent-blue);
+          animation: scan-move 2s ease-in-out infinite;
+        }
+        @keyframes scan-move {
+          0%, 100% { top: 5%; }
+          50% { top: 95%; }
         }
       `}</style>
     </div>

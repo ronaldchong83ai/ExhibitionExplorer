@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import jsQR from 'jsqr';
 import { useRouter } from 'next/navigation';
 import type { User, Exhibition, HomePageInfo, StageEvent, Exhibitor, Voucher, Product, PurchaseConversion } from '@/types';
 import type { SessionUser } from '@/types';
@@ -75,6 +76,15 @@ export default function AdminPage() {
   const [newVisitorEmail, setNewVisitorEmail] = useState('');
   const [collectionsLoading, setCollectionsLoading] = useState(false);
 
+  // Scanner states & refs for Admin email scan popup
+  const [scanning, setScanning] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
   const checkAuth = useCallback(async () => {
     const data = await fetchData('/api/auth/session');
     if (data.success && data.data.role === 'ADMIN') {
@@ -100,6 +110,111 @@ export default function AdminPage() {
       }
     }
   }, []);
+
+  // Cleanup scanner on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const startScanner = async () => {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      streamRef.current = stream;
+      setScanning(true);
+      
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.play().catch(e => console.error("Play failed:", e));
+          
+          if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+          }
+          animationFrameRef.current = requestAnimationFrame(tick);
+        }
+      }, 100);
+    } catch (err: any) {
+      console.error('Camera access error:', err);
+      setCameraError('Could not access camera. Please ensure permissions are granted and you are using HTTPS.');
+    }
+  };
+
+  const stopScanner = () => {
+    setScanning(false);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const playBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    } catch {}
+  };
+
+  const tick = () => {
+    if (!videoRef.current || !canvasRef.current) {
+      animationFrameRef.current = requestAnimationFrame(tick);
+      return;
+    }
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
+
+        if (code && code.data) {
+          const scannedEmail = code.data.trim();
+          stopScanner();
+          playBeep();
+          
+          if (scannedEmail) {
+            executeAddVisitor(scannedEmail);
+          }
+          return;
+        }
+      }
+    }
+    animationFrameRef.current = requestAnimationFrame(tick);
+  };
 
   // 1. Fetch exhibitions (always load once user is logged in)
   useEffect(() => {
@@ -321,17 +436,19 @@ export default function AdminPage() {
     }
   };
 
-  const addVisitorToCollections = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeVoucherForCollections || !newVisitorEmail.trim()) return;
+  const executeAddVisitor = async (emailStr: string) => {
+    if (!activeVoucherForCollections || !emailStr) return;
 
     setCollectionsLoading(true);
     try {
       const res = await postData(`/api/vouchers/${activeVoucherForCollections.id}/collections`, {
-        email: newVisitorEmail.trim(),
+        email: emailStr,
       });
       if (res.success && res.data) {
-        setCollectedVisitors(prev => [res.data, ...prev]);
+        setCollectedVisitors(prev => {
+          if (prev.some(v => v.userId === res.data.userId)) return prev;
+          return [res.data, ...prev];
+        });
         setNewVisitorEmail('');
       } else {
         alert(res.error || "Failed to add visitor to collection");
@@ -341,6 +458,18 @@ export default function AdminPage() {
       alert("Failed to add visitor");
     } finally {
       setCollectionsLoading(false);
+    }
+  };
+
+  const addVisitorToCollections = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeVoucherForCollections) return;
+
+    const trimmedEmail = newVisitorEmail.trim();
+    if (!trimmedEmail) {
+      startScanner();
+    } else {
+      await executeAddVisitor(trimmedEmail);
     }
   };
 
@@ -749,7 +878,6 @@ export default function AdminPage() {
                       placeholder="Enter visitor's email..."
                       value={newVisitorEmail}
                       onChange={e => setNewVisitorEmail(e.target.value)}
-                      required
                       style={{ flex: 1 }}
                       disabled={collectionsLoading}
                     />
@@ -789,6 +917,50 @@ export default function AdminPage() {
                   <div className="form-actions" style={{ marginTop: 'var(--space-4)' }}>
                     <button className="btn btn-secondary" type="button" onClick={() => setShowCollectionsModal(false)}>Close</button>
                   </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {scanning && (
+            <>
+              <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={stopScanner} />
+              <div className="modal-content" style={{ zIndex: 1101, maxWidth: '360px' }}>
+                <div className="modal-handle" />
+                <div className="admin-form animate-scale-in" style={{ marginTop: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                  <h4 style={{ fontWeight: 600, fontSize: 'var(--font-size-base)', marginBottom: 'var(--space-3)', alignSelf: 'flex-start' }}>
+                    📷 Scan Visitor QR Code
+                  </h4>
+                  
+                  {cameraError && (
+                    <div className="error-banner animate-fade-in" style={{ marginBottom: 'var(--space-4)', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 'var(--radius-md)', color: 'rgb(248, 113, 113)', fontSize: 'var(--font-size-sm)' }}>
+                      ⚠️ {cameraError}
+                    </div>
+                  )}
+
+                  <div className="camera-preview" style={{ margin: 'var(--space-2) auto var(--space-4) auto' }}>
+                    <video
+                      ref={videoRef}
+                      className="camera-video"
+                      playsInline
+                    />
+                    <canvas ref={canvasRef} style={{ display: 'none' }} />
+                    <div className="scan-frame">
+                      <div className="scan-corner tl" />
+                      <div className="scan-corner tr" />
+                      <div className="scan-corner bl" />
+                      <div className="scan-corner br" />
+                      <div className="scan-line" />
+                    </div>
+                  </div>
+
+                  <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-xs)', marginBottom: 'var(--space-4)' }}>
+                    Align the visitor's profile QR code inside the frame to scan.
+                  </p>
+
+                  <button className="btn btn-secondary btn-full" onClick={stopScanner}>
+                    Cancel
+                  </button>
                 </div>
               </div>
             </>

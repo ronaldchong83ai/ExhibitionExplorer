@@ -1122,3 +1122,57 @@ ul, ol {
   animation: slideUp var(--transition-spring) forwards;
 }
 
+/* Modal Scanner Styles */
+.camera-preview {
+  width: 240px;
+  height: 240px;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+.camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+.scan-frame {
+  width: 160px;
+  height: 160px;
+  position: relative;
+  z-index: 2;
+}
+.scan-corner { 
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--color-accent-blue);
+}
+.scan-corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; border-radius: 4px 0 0 0; }
+.scan-corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; border-radius: 0 4px 0 0; }
+.scan-corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; border-radius: 0 0 0 4px; }
+.scan-corner.br { bottom: 0; right: 0; border-left: none; border-top: none; border-radius: 0 0 4px 0; }
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: var(--color-accent-blue);
+  box-shadow: 0 0 10px var(--color-accent-blue);
+  animation: scan-move 2s ease-in-out infinite;
+}
+@keyframes scan-move {
+  0%, 100% { top: 5%; }
+  50% { top: 95%; }
+}
+

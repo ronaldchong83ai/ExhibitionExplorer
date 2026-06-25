@@ -168,6 +168,20 @@ export default function ProfileDetailsPage() {
             />
           </div>
 
+          {profile.email && (
+            <div className="form-group" style={{ marginBottom: 'var(--space-5)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <label className="form-label" style={{ alignSelf: 'flex-start' }}>Profile QR Code (for Redemptor Scan)</label>
+              <div style={{ padding: '12px', background: 'white', borderRadius: 'var(--radius-md)', display: 'inline-block', marginTop: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(profile.email)}`} 
+                  alt="Email QR Code" 
+                  style={{ display: 'block', width: '150px', height: '150px' }} 
+                />
+              </div>
+              <p className="avatar-tip" style={{ marginTop: '8px' }}>Present this QR code to the booth redemptor to redeem your voucher.</p>
+            </div>
+          )}
+
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
             <label className="form-label" htmlFor="profile-name">Full Name *</label>
             <input
