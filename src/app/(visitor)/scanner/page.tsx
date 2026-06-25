@@ -8,6 +8,8 @@ export default function ScannerPage() {
   const [mode, setMode] = useState<'qr' | 'linkray'>('qr');
   const [scanning, setScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [registering, setRegistering] = useState(false);
+  const [registrationMessage, setRegistrationMessage] = useState<{ text: string; type: 'success' | 'warning' | 'error' } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -66,6 +68,54 @@ export default function ScannerPage() {
     }
   };
 
+  const registerScan = async (scannedCode: string) => {
+    setRegistering(true);
+    setRegistrationMessage(null);
+    try {
+      const res = await fetch('/api/scanner', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ scanId: scannedCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRegistrationMessage({
+          text: data.error || 'Failed to register scan',
+          type: 'error',
+        });
+      } else {
+        if (data.matched) {
+          if (data.alreadyScanned) {
+            setRegistrationMessage({
+              text: data.message,
+              type: 'warning',
+            });
+          } else {
+            setRegistrationMessage({
+              text: data.message,
+              type: 'success',
+            });
+          }
+        } else {
+          setRegistrationMessage({
+            text: data.message,
+            type: 'warning',
+          });
+        }
+      }
+    } catch (err: any) {
+      console.error('Failed to register scan:', err);
+      setRegistrationMessage({
+        text: 'A network error occurred. Please try again.',
+        type: 'error',
+      });
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   const tick = () => {
     if (!videoRef.current || !canvasRef.current) {
       animationFrameRef.current = requestAnimationFrame(tick);
@@ -91,10 +141,12 @@ export default function ScannerPage() {
         });
 
         if (code && code.data) {
-          setScanResult(code.data);
+          const scannedText = code.data;
+          setScanResult(scannedText);
           stopScanner();
           // Play notification beep if possible (using browser Web Audio API)
           playBeep();
+          registerScan(scannedText);
           return;
         }
       }
@@ -207,14 +259,52 @@ export default function ScannerPage() {
 
       {scanResult && (
         <div className="scan-result card animate-slide-up" style={{ marginTop: 'var(--space-4)' }}>
-          <h4 style={{ marginBottom: 'var(--space-2)' }}>✅ Scan Result</h4>
-          <p style={{ color: 'var(--color-accent-green)', fontSize: 'var(--font-size-sm)', wordBreak: 'break-all' }}>
+          <h4 style={{ marginBottom: 'var(--space-2)' }}>
+            {registering ? '🔄 Registering Scan...' : '✅ Scan Result'}
+          </h4>
+          <p style={{ color: 'var(--color-accent-green)', fontSize: 'var(--font-size-sm)', wordBreak: 'break-all', marginBottom: 'var(--space-2)' }}>
             {scanResult}
           </p>
+
+          {registrationMessage && (
+            <div 
+              style={{
+                display: 'block',
+                padding: 'var(--space-3)',
+                marginTop: 'var(--space-3)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: 'var(--font-size-sm)',
+                lineHeight: '1.4',
+                background: registrationMessage.type === 'success' 
+                  ? 'rgba(16, 185, 129, 0.15)' 
+                  : registrationMessage.type === 'warning'
+                    ? 'rgba(245, 158, 11, 0.15)'
+                    : 'rgba(255, 107, 107, 0.15)',
+                color: registrationMessage.type === 'success' 
+                  ? 'var(--color-accent-green)' 
+                  : registrationMessage.type === 'warning'
+                    ? 'var(--color-accent-amber)'
+                    : 'var(--color-accent-coral)',
+                border: `1px solid ${
+                  registrationMessage.type === 'success'
+                    ? 'rgba(16, 185, 129, 0.3)'
+                    : registrationMessage.type === 'warning'
+                      ? 'rgba(245, 158, 11, 0.3)'
+                      : 'rgba(255, 107, 107, 0.3)'
+                }`
+              }}
+            >
+              {registrationMessage.text}
+            </div>
+          )}
+
           <button
             className="btn btn-secondary btn-full"
             style={{ marginTop: 'var(--space-3)' }}
-            onClick={() => setScanResult(null)}
+            onClick={() => {
+              setScanResult(null);
+              setRegistrationMessage(null);
+            }}
           >
             Clear
           </button>
