@@ -32,10 +32,18 @@ export default function ScannerPage() {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.setAttribute('playsinline', 'true'); // Required for iOS Safari
-        videoRef.current.play();
         setScanning(true);
-        // Start loop
-        animationFrameRef.current = requestAnimationFrame(tick);
+        // Important: Wait for state change to render/display the video element, then play
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(e => console.error("Play failed:", e));
+            // Start loop
+            if (animationFrameRef.current) {
+              cancelAnimationFrame(animationFrameRef.current);
+            }
+            animationFrameRef.current = requestAnimationFrame(tick);
+          }
+        }, 50);
       }
     } catch (err: any) {
       console.error('Camera access error:', err);
@@ -59,7 +67,10 @@ export default function ScannerPage() {
   };
 
   const tick = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current) {
+      animationFrameRef.current = requestAnimationFrame(tick);
+      return;
+    }
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
@@ -142,10 +153,17 @@ export default function ScannerPage() {
           )}
 
           <div className="camera-preview">
+            {/* Always render video & canvas to avoid ref being null, toggle visibility with CSS */}
+            <video
+              ref={videoRef}
+              className="camera-video"
+              playsInline
+              style={{ display: scanning ? 'block' : 'none' }}
+            />
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
+
             {scanning ? (
               <>
-                <video ref={videoRef} className="camera-video" playsInline />
-                <canvas ref={canvasRef} style={{ display: 'none' }} />
                 <div className="scan-frame">
                   <div className="scan-corner tl" />
                   <div className="scan-corner tr" />
