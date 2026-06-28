@@ -10,11 +10,13 @@ export default function ForgotPasswordPage() {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [isOtpVerified, setIsOtpVerified] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   useEffect(() => {
     fetch('/api/home')
@@ -71,6 +73,32 @@ export default function ForgotPasswordPage() {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setVerifyingOtp(true);
+
+    try {
+      const res = await fetch('/api/auth/forgot-password/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setIsOtpVerified(true);
+        setSuccessMessage('OTP verified successfully. Please enter your new password below.');
+      } else {
+        setError(data.error || 'Incorrect or expired OTP.');
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setVerifyingOtp(false);
     }
   };
 
@@ -157,9 +185,9 @@ export default function ForgotPasswordPage() {
           </form>
         )}
 
-        {/* Step 2: Verify OTP and Reset Password */}
+        {/* Step 2: OTP Verification and Reset Password */}
         {step === 2 && (
-          <form onSubmit={handleResetPassword} className="auth-form">
+          <div className="auth-form">
             {successMessage && (
               <div 
                 className="auth-success" 
@@ -178,6 +206,7 @@ export default function ForgotPasswordPage() {
               </div>
             )}
 
+            {/* OTP Input and verification button */}
             <div className="form-group">
               <label className="form-label" htmlFor="otp-input">Enter OTP</label>
               <input
@@ -189,12 +218,29 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setOtp(e.target.value)}
                 required
                 maxLength={6}
+                disabled={isOtpVerified}
               />
             </div>
 
-            {/* Password fields only appear once 6 digits are fully entered */}
-            {otp.length === 6 && (
-              <div className="animate-scale-in">
+            {!isOtpVerified && (
+              <>
+                {error && <div className="auth-error" style={{ marginBottom: '16px' }}>{error}</div>}
+
+                <button
+                  type="button"
+                  onClick={handleVerifyOtp}
+                  className="btn btn-primary btn-full btn-lg"
+                  disabled={otp.length !== 6 || verifyingOtp}
+                  id="verify-otp-submit"
+                >
+                  {verifyingOtp ? <span className="loading-spinner" /> : 'Verify OTP'}
+                </button>
+              </>
+            )}
+
+            {/* Password fields only appear once OTP has been verified successfully */}
+            {isOtpVerified && (
+              <form onSubmit={handleResetPassword} className="animate-scale-in">
                 <div className="form-group">
                   <label className="form-label" htmlFor="new-password">New Password</label>
                   <input
@@ -231,9 +277,9 @@ export default function ForgotPasswordPage() {
                 >
                   {loading ? <span className="loading-spinner" /> : 'Reset Password'}
                 </button>
-              </div>
+              </form>
             )}
-          </form>
+          </div>
         )}
 
         <div style={{ textAlign: 'center', marginTop: '24px' }}>
