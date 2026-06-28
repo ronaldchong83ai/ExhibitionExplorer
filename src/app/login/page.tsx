@@ -136,6 +136,21 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <div style={{ textAlign: 'center', marginTop: '16px', marginBottom: '8px' }}>
+          <Link 
+            href="/forgot-password" 
+            style={{ 
+              color: 'var(--color-primary)', 
+              fontSize: 'var(--font-size-sm)', 
+              textDecoration: 'none',
+              fontWeight: 500
+            }} 
+            id="forgot-password-link"
+          >
+            Forgot Password?
+          </Link>
+        </div>
+
         {/* Divider */}
         <div className="divider">or continue with</div>
 
