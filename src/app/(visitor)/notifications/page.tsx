@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Notification } from '@/types';
+import { formatDateDDMMMYYYY } from '@/lib/date';
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -28,7 +29,7 @@ export default function NotificationsPage() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    return formatDateDDMMMYYYY(date);
   };
 
   if (loading) {

@@ -47,10 +47,40 @@ export default function VenueMapPage() {
     fetchVenueMapData();
   }, [selectedExhibitionId]);
 
+  const renderStyledPageTitle = (title: string) => {
+    const colors = ['#F6921E', '#3B82F6', '#10B981'];
+    let colorIndex = 0;
+    const emojiRegex = /^([\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}])\s*/u;
+    const match = title.match(emojiRegex);
+    let emoji = '';
+    let text = title;
+    if (match) {
+      emoji = match[0];
+      text = title.slice(emoji.length);
+    }
+    return (
+      <>
+        {emoji && <span>{emoji}</span>}
+        {text.split('').map((char, idx) => {
+          if (char === ' ') {
+            return <span key={idx}> </span>;
+          }
+          const color = colors[colorIndex % colors.length];
+          colorIndex++;
+          return (
+            <span key={idx} style={{ color }}>
+              {char}
+            </span>
+          );
+        })}
+      </>
+    );
+  };
+
   if (loading) {
     return (
       <div className="page-container">
-        <h2 className="page-title">🗺️ Venue Map</h2>
+        <h2 className="page-title">{renderStyledPageTitle("🗺️ Venue Map")}</h2>
         <div className="skeleton" style={{ height: 350 }} />
       </div>
     );
@@ -58,7 +88,9 @@ export default function VenueMapPage() {
 
   return (
     <div className="page-container">
-      <h2 className="page-title" style={{ marginBottom: exhibition ? 4 : 'var(--space-4)' }}>🗺️ Venue Map</h2>
+      <h2 className="page-title" style={{ marginBottom: exhibition ? 4 : 'var(--space-4)' }}>
+        {renderStyledPageTitle("🗺️ Venue Map")}
+      </h2>
       {exhibition && (
         <p className="page-subtitle" style={{ marginBottom: 'var(--space-4)' }}>
           For {exhibition.title}

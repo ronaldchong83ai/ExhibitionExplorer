@@ -100,6 +100,8 @@ export interface Voucher {
   description: string;
   details: string;
   requiredScanIds: string[];
+  displayFrom?: string;
+  displayTo?: string;
   createdAt: string;
 }
 
@@ -171,4 +173,22 @@ export interface SessionUser {
   name: string;
   email: string;
   role: UserRole;
+}
+
+export interface Facility {
+  id: string;
+  exhibitionId: string;
+  facilityName: string;
+  areaNumber: string;
+  periodFrom: string;
+  periodTo: string;
+  createdAt: string;
+}
+
+export interface FacilityBooking {
+  id: string;
+  facilityId: string;
+  userId: string;
+  bookingTime: string;
+  createdAt: string;
 }

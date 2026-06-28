@@ -52,3 +52,31 @@ export async function PUT(request: NextRequest) {
   
   return Response.json({ success: true, data: { userId, role } });
 }
+
+export async function DELETE(request: NextRequest) {
+  const session = await getSession();
+  if (!session || session.role !== 'ADMIN') {
+    return Response.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  if (!id) {
+    return Response.json({ success: false, error: 'Missing user ID' }, { status: 400 });
+  }
+
+  if (id === session.id) {
+    return Response.json({ success: false, error: 'Cannot delete your own admin account' }, { status: 400 });
+  }
+
+  const data = await getData();
+  const idx = data.users.findIndex(u => u.id === id);
+  if (idx === -1) {
+    return Response.json({ success: false, error: 'User not found' }, { status: 404 });
+  }
+
+  data.users.splice(idx, 1);
+  await saveData(data);
+
+  return Response.json({ success: true });
+}

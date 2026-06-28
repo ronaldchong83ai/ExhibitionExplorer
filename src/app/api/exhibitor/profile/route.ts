@@ -100,3 +100,32 @@ export async function PUT(request: NextRequest) {
   await saveData(data);
   return Response.json({ success: true, data: data.exhibitors[idx] });
 }
+
+export async function DELETE(request: NextRequest) {
+  const session = await getSession();
+  if (!session || (session.role !== 'EXHIBITOR' && session.role !== 'ADMIN')) {
+    return Response.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  if (!id) {
+    return Response.json({ success: false, error: 'Missing profile ID' }, { status: 400 });
+  }
+
+  const data = await getData();
+  const idx = data.exhibitors.findIndex(e => e.id === id);
+  if (idx === -1) {
+    return Response.json({ success: false, error: 'Profile not found' }, { status: 404 });
+  }
+
+  const exhibitor = data.exhibitors[idx];
+  if (session.role !== 'ADMIN' && !exhibitor.allowedUserIds.includes(session.id)) {
+    return Response.json({ success: false, error: 'Unauthorized to delete this profile' }, { status: 403 });
+  }
+
+  data.exhibitors.splice(idx, 1);
+  await saveData(data);
+
+  return Response.json({ success: true });
+}

@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import type { StageEvent } from '@/types';
+import { formatDatetimeDDMMMYYYY } from '@/lib/date';
 
 export default function StageDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -52,9 +53,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   const formatDateTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) +
-      ' at ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return formatDatetimeDDMMMYYYY(dateStr);
   };
 
   return (

@@ -16,6 +16,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/home', label: 'Home', icon: '🏠' },
   { href: '/stages', label: 'Stage Info', icon: '🎭' },
+  { href: '/facility-booking', label: 'Facility Booking', icon: '📅' },
   { href: '/exhibitors', label: 'Exhibitor List', icon: '🏢' },
   { href: '/venue-map', label: 'Venue Map', icon: '🗺️' },
   { href: '/scanner', label: 'QR Code Scan', icon: '📷' },

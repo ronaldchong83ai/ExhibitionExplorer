@@ -5,16 +5,31 @@ import jsQR from 'jsqr';
 
 export default function ScannerPage() {
   const [scanResult, setScanResult] = useState<string | null>(null);
-  const [mode, setMode] = useState<'qr' | 'linkray'>('qr');
+  const [mode, setMode] = useState<'qr' | 'linkray'>('linkray');
   const [scanning, setScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [registering, setRegistering] = useState(false);
   const [registrationMessage, setRegistrationMessage] = useState<{ text: string; type: 'success' | 'warning' | 'error' } | null>(null);
+  const [exhibition, setExhibition] = useState<{ title: string } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('selectedExhibitionId');
+    if (saved) {
+      fetch(`/api/home?exhibitionId=${saved}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.data && res.data.exhibition) {
+            setExhibition(res.data.exhibition);
+          }
+        })
+        .catch(err => console.error(err));
+    }
+  }, []);
 
   useEffect(() => {
     // Stop scanning and release resources on unmount
@@ -182,17 +197,54 @@ export default function ScannerPage() {
     }
   };
 
+  const renderStyledPageTitle = (title: string) => {
+    const colors = ['#F6921E', '#3B82F6', '#10B981'];
+    let colorIndex = 0;
+    const emojiRegex = /^([\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}])\s*/u;
+    const match = title.match(emojiRegex);
+    let emoji = '';
+    let text = title;
+    if (match) {
+      emoji = match[0];
+      text = title.slice(emoji.length);
+    }
+    return (
+      <>
+        {emoji && <span>{emoji}</span>}
+        {text.split('').map((char, idx) => {
+          if (char === ' ') {
+            return <span key={idx}> </span>;
+          }
+          const color = colors[colorIndex % colors.length];
+          colorIndex++;
+          return (
+            <span key={idx} style={{ color }}>
+              {char}
+            </span>
+          );
+        })}
+      </>
+    );
+  };
+
   return (
     <div className="page-container">
-      <h2 className="page-title">📷 Scanner</h2>
+      <h2 className="page-title" style={{ marginBottom: exhibition ? 4 : 'var(--space-4)' }}>
+        {renderStyledPageTitle("📷 Scanner")}
+      </h2>
+      {exhibition && (
+        <p className="page-subtitle" style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)', marginTop: 0, marginBottom: 'var(--space-4)' }}>
+          For {exhibition.title}
+        </p>
+      )}
 
       {/* Mode Tabs */}
       <div className="tabs">
-        <button className={`tab ${mode === 'qr' ? 'active' : ''}`} onClick={() => { stopScanner(); setMode('qr'); }}>
-          QR Code
-        </button>
         <button className={`tab ${mode === 'linkray' ? 'active' : ''}`} onClick={() => { stopScanner(); setMode('linkray'); }}>
           LinkRay
+        </button>
+        <button className={`tab ${mode === 'qr' ? 'active' : ''}`} onClick={() => { stopScanner(); setMode('qr'); }}>
+          QR Code
         </button>
       </div>
 

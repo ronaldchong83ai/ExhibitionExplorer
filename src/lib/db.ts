@@ -77,17 +77,24 @@ export async function getData(): Promise<DataStore> {
       provider: u.provider as AuthProvider,
       createdAt: u.createdAt.toISOString()
     })),
-    exhibitions: exhibitions.map(e => ({
-      ...e,
-      eventPeriodFrom: e.eventPeriodFrom.toISOString(),
-      eventPeriodTo: e.eventPeriodTo.toISOString(),
-      createdAt: e.createdAt.toISOString()
-    })),
+    exhibitions: (() => {
+      const mapped = exhibitions.map(e => ({
+        ...e,
+        eventPeriodFrom: e.eventPeriodFrom.toISOString(),
+        eventPeriodTo: e.eventPeriodTo.toISOString(),
+        createdAt: e.createdAt.toISOString()
+      }));
+      const active = mapped.filter(e => e.enabled !== false);
+      const disabled = mapped.filter(e => e.enabled === false);
+      active.sort((a, b) => new Date(a.eventPeriodFrom).getTime() - new Date(b.eventPeriodFrom).getTime());
+      disabled.sort((a, b) => new Date(b.eventPeriodTo).getTime() - new Date(a.eventPeriodTo).getTime());
+      return [...active, ...disabled];
+    })(),
     homePageInfos: homePageInfos.map(h => ({
       ...h,
       type: h.type as HomeInfoType,
-      displayFrom: h.displayFrom.toISOString(),
-      displayTo: h.displayTo.toISOString(),
+      displayFrom: h.displayFrom ? h.displayFrom.toISOString() : '',
+      displayTo: h.displayTo ? h.displayTo.toISOString() : '',
       createdAt: h.createdAt.toISOString()
     })),
     stageEvents: stageEvents.map(s => ({
@@ -111,6 +118,8 @@ export async function getData(): Promise<DataStore> {
     })),
     vouchers: vouchers.map(v => ({
       ...v,
+      displayFrom: v.displayFrom ? v.displayFrom.toISOString() : '',
+      displayTo: v.displayTo ? v.displayTo.toISOString() : '',
       createdAt: v.createdAt.toISOString()
     })),
     voucherScans: voucherScans.map(v => ({
@@ -230,8 +239,8 @@ export async function saveData(data: DataStore): Promise<void> {
         title: h.title,
         type: h.type,
         description: h.description,
-        displayFrom: new Date(h.displayFrom),
-        displayTo: new Date(h.displayTo),
+        displayFrom: h.displayFrom ? new Date(h.displayFrom) : null,
+        displayTo: h.displayTo ? new Date(h.displayTo) : null,
         details: h.details,
         createdAt: new Date(h.createdAt)
       },
@@ -241,8 +250,8 @@ export async function saveData(data: DataStore): Promise<void> {
         title: h.title,
         type: h.type,
         description: h.description,
-        displayFrom: new Date(h.displayFrom),
-        displayTo: new Date(h.displayTo),
+        displayFrom: h.displayFrom ? new Date(h.displayFrom) : null,
+        displayTo: h.displayTo ? new Date(h.displayTo) : null,
         details: h.details,
         createdAt: new Date(h.createdAt)
       }
@@ -399,6 +408,8 @@ export async function saveData(data: DataStore): Promise<void> {
         description: v.description,
         details: v.details,
         requiredScanIds: v.requiredScanIds,
+        displayFrom: v.displayFrom ? new Date(v.displayFrom) : null,
+        displayTo: v.displayTo ? new Date(v.displayTo) : null,
         createdAt: new Date(v.createdAt)
       },
       create: {
@@ -408,6 +419,8 @@ export async function saveData(data: DataStore): Promise<void> {
         description: v.description,
         details: v.details,
         requiredScanIds: v.requiredScanIds,
+        displayFrom: v.displayFrom ? new Date(v.displayFrom) : null,
+        displayTo: v.displayTo ? new Date(v.displayTo) : null,
         createdAt: new Date(v.createdAt)
       }
     })),

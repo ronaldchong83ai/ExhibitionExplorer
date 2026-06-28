@@ -39,8 +39,8 @@ model HomePageInfo {
   title        String
   type         String   // EVENT_INFO, ANNOUNCEMENT, IMPORTANT_NOTICE
   description  String
-  displayFrom  DateTime
-  displayTo    DateTime
+  displayFrom  DateTime?
+  displayTo    DateTime?
   details      String
   createdAt    DateTime @default(now())
 }
@@ -94,13 +94,15 @@ model VenueMap {
 }
 
 model Voucher {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   exhibitionId    String
   title           String
   description     String
   details         String
   requiredScanIds String[]
-  createdAt       DateTime @default(now())
+  displayFrom     DateTime?
+  displayTo       DateTime?
+  createdAt       DateTime  @default(now())
 }
 
 model VoucherScan {
@@ -174,5 +176,24 @@ model VoucherCollection {
   collectedAt DateTime @default(now())
 
   @@unique([voucherId, userId])
+}
+
+model Facility {
+  id             String   @id @default(uuid())
+  exhibitionId   String
+  facilityName   String
+  areaNumber     String
+  periodFrom     DateTime
+  periodTo       DateTime
+  operatingHours String?
+  createdAt      DateTime @default(now())
+}
+
+model FacilityBooking {
+  id          String   @id @default(uuid())
+  facilityId  String
+  userId      String
+  bookingTime DateTime
+  createdAt   DateTime @default(now())
 }
 

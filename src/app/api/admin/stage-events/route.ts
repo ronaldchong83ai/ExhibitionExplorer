@@ -7,13 +7,29 @@ export async function GET(request: NextRequest) {
   if (!session || session.role !== 'ADMIN') return Response.json({ success: false, error: 'Unauthorized' }, { status: 403 });
   const exhibitionId = request.nextUrl.searchParams.get('exhibitionId') || '';
   const data = await getData();
-  return Response.json({ success: true, data: data.stageEvents.filter(e => e.exhibitionId === exhibitionId) });
+  const filtered = data.stageEvents.filter(e => e.exhibitionId === exhibitionId);
+  filtered.sort((a, b) => new Date(a.periodFrom).getTime() - new Date(b.periodFrom).getTime());
+  return Response.json({ success: true, data: filtered });
 }
 
 export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session || session.role !== 'ADMIN') return Response.json({ success: false, error: 'Unauthorized' }, { status: 403 });
   const body = await request.json();
+
+  if (!body.title || !body.title.trim()) {
+    return Response.json({ success: false, error: 'Title is required' }, { status: 400 });
+  }
+  if (!body.periodFrom) {
+    return Response.json({ success: false, error: 'Period From is required' }, { status: 400 });
+  }
+  if (!body.periodTo) {
+    return Response.json({ success: false, error: 'Period To is required' }, { status: 400 });
+  }
+  if (!body.stageNumber || !body.stageNumber.trim()) {
+    return Response.json({ success: false, error: 'Stage Number is required' }, { status: 400 });
+  }
+
   const data = await getData();
   const item = {
     id: generateId(), exhibitionId: body.exhibitionId, title: body.title || '',
@@ -29,6 +45,20 @@ export async function PUT(request: NextRequest) {
   const session = await getSession();
   if (!session || session.role !== 'ADMIN') return Response.json({ success: false, error: 'Unauthorized' }, { status: 403 });
   const body = await request.json();
+
+  if (body.title !== undefined && (!body.title || !body.title.trim())) {
+    return Response.json({ success: false, error: 'Title is required' }, { status: 400 });
+  }
+  if (body.periodFrom !== undefined && !body.periodFrom) {
+    return Response.json({ success: false, error: 'Period From is required' }, { status: 400 });
+  }
+  if (body.periodTo !== undefined && !body.periodTo) {
+    return Response.json({ success: false, error: 'Period To is required' }, { status: 400 });
+  }
+  if (body.stageNumber !== undefined && (!body.stageNumber || !body.stageNumber.trim())) {
+    return Response.json({ success: false, error: 'Stage Number is required' }, { status: 400 });
+  }
+
   const data = await getData();
   const idx = data.stageEvents.findIndex(e => e.id === body.id);
   if (idx === -1) return Response.json({ success: false, error: 'Not found' }, { status: 404 });
@@ -39,4 +69,17 @@ export async function PUT(request: NextRequest) {
   };
   await saveData(data);
   return Response.json({ success: true, data: data.stageEvents[idx] });
+}
+
+export async function DELETE(request: NextRequest) {
+  const session = await getSession();
+  if (!session || session.role !== 'ADMIN') return Response.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+  const id = request.nextUrl.searchParams.get('id');
+  if (!id) return Response.json({ success: false, error: 'Missing stage event ID' }, { status: 400 });
+  const data = await getData();
+  const idx = data.stageEvents.findIndex(e => e.id === id);
+  if (idx === -1) return Response.json({ success: false, error: 'Not found' }, { status: 404 });
+  data.stageEvents.splice(idx, 1);
+  await saveData(data);
+  return Response.json({ success: true });
 }

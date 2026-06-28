@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import jsQR from 'jsqr';
 import type { Exhibition, SessionUser } from '@/types';
+import { formatDateDDMMMYYYY, formatDatetimeDDMMMYYYY } from '@/lib/date';
 
 interface VoucherWithProgress {
   id: string;
@@ -10,6 +11,8 @@ interface VoucherWithProgress {
   description: string;
   details: string;
   requiredScanIds: string[];
+  displayFrom?: string;
+  displayTo?: string;
   collectedCount: number;
   totalRequired: number;
   isComplete: boolean;
@@ -170,6 +173,10 @@ export default function CouponsPage() {
         if (data.success && data.data) {
           setVouchers(data.data.vouchers || []);
           setExhibition(data.data.exhibition || null);
+          if (data.data.exhibition && !selectedExhibitionId) {
+            setSelectedExhibitionId(data.data.exhibition.id);
+            localStorage.setItem('selectedExhibitionId', data.data.exhibition.id);
+          }
         }
       })
       .catch(err => {
@@ -272,9 +279,41 @@ export default function CouponsPage() {
     );
   }
 
+  const renderStyledPageTitle = (title: string) => {
+    const colors = ['#F6921E', '#3B82F6', '#10B981'];
+    let colorIndex = 0;
+    const emojiRegex = /^([\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}])\s*/u;
+    const match = title.match(emojiRegex);
+    let emoji = '';
+    let text = title;
+    if (match) {
+      emoji = match[0];
+      text = title.slice(emoji.length);
+    }
+    return (
+      <>
+        {emoji && <span>{emoji}</span>}
+        {text.split('').map((char, idx) => {
+          if (char === ' ') {
+            return <span key={idx}> </span>;
+          }
+          const color = colors[colorIndex % colors.length];
+          colorIndex++;
+          return (
+            <span key={idx} style={{ color }}>
+              {char}
+            </span>
+          );
+        })}
+      </>
+    );
+  };
+
   return (
     <div className="page-container">
-      <h2 className="page-title" style={{ marginBottom: exhibition ? 4 : 'var(--space-4)' }}>🎫 Coupons & Gifts</h2>
+      <h2 className="page-title" style={{ marginBottom: exhibition ? 4 : 'var(--space-4)' }}>
+        {renderStyledPageTitle("🎫 Coupons & Gifts")}
+      </h2>
       {exhibition && (
         <p className="page-subtitle" style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)', marginTop: 0, marginBottom: 'var(--space-3)' }}>
           For {exhibition.title}
@@ -308,6 +347,9 @@ export default function CouponsPage() {
                   </div>
                 </div>
                 <p className="voucher-desc">{v.description}</p>
+                <span className="voucher-display-period" style={{ display: 'block', marginTop: '4px', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                  🕒 Display: {v.displayFrom && v.displayTo ? `${formatDatetimeDDMMMYYYY(v.displayFrom)} - ${formatDatetimeDDMMMYYYY(v.displayTo)}` : 'Always active'}
+                </span>
                 <div className="progress-bar" style={{ marginTop: 'var(--space-3)' }}>
                   <div className="progress-fill" style={{ width: `${collectedPercent}%` }} />
                 </div>

@@ -17,8 +17,18 @@ export async function POST(request: NextRequest) {
     const cleanScanId = scanId.trim();
     const data = await getData();
 
-    // Find all active vouchers that require this scanId
-    const matchingVouchers = data.vouchers.filter(v => v.requiredScanIds.includes(cleanScanId));
+    // Find all active vouchers that require this scanId and are within their display periods
+    const now = new Date();
+    const matchingVouchers = data.vouchers.filter(v => {
+      if (!v.requiredScanIds.includes(cleanScanId)) return false;
+      if (v.displayFrom && v.displayFrom.trim()) {
+        if (now < new Date(v.displayFrom)) return false;
+      }
+      if (v.displayTo && v.displayTo.trim()) {
+        if (now > new Date(v.displayTo)) return false;
+      }
+      return true;
+    });
 
     if (matchingVouchers.length === 0) {
       // Create a generic scan action log

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Exhibition, HomePageInfo, HomeInfoType } from '@/types';
+import { formatDateDDMMMYYYY, formatDatetimeDDMMMYYYY } from '@/lib/date';
 
 const TYPE_CONFIG: Record<HomeInfoType, { label: string; badge: string; icon: string }> = {
   EVENT_INFO: { label: 'Event Info', badge: 'badge-blue', icon: '📋' },
@@ -60,6 +61,27 @@ export default function HomePage() {
     );
   }
 
+  const renderStyledTitle = (title: string) => {
+    const colors = ['#F6921E', '#3B82F6', '#10B981'];
+    let colorIndex = 0;
+    return (
+      <span style={{ display: 'inline-block' }}>
+        {title.split('').map((char, idx) => {
+          if (char === ' ') {
+            return <span key={idx}> </span>;
+          }
+          const color = colors[colorIndex % colors.length];
+          colorIndex++;
+          return (
+            <span key={idx} style={{ color }}>
+              {char}
+            </span>
+          );
+        })}
+      </span>
+    );
+  };
+
   return (
     <div className="page-container">
       {/* Exhibition Hero - Clickable to Switch */}
@@ -76,7 +98,7 @@ export default function HomePage() {
                 ⇄ Switch Exhibition
               </span>
             </div>
-            <h1 className="hero-title" style={{ marginTop: 4 }}>{exhibition.title}</h1>
+            <h1 className="hero-title" style={{ marginTop: 4 }}>{renderStyledTitle(exhibition.title)}</h1>
             <p className="hero-desc">{exhibition.description}</p>
             <div className="hero-date">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -86,9 +108,9 @@ export default function HomePage() {
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
               <span>
-                {new Date(exhibition.eventPeriodFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {formatDateDDMMMYYYY(exhibition.eventPeriodFrom)}
                 {' — '}
-                {new Date(exhibition.eventPeriodTo).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                {formatDateDDMMMYYYY(exhibition.eventPeriodTo)}
               </span>
             </div>
           </div>
@@ -119,6 +141,11 @@ export default function HomePage() {
                   <div className="info-card-meta">
                     <span className={`badge ${config.badge}`}>{config.label}</span>
                     <h3 className="info-card-title">{info.title}</h3>
+                    {info.displayFrom && info.displayTo && (
+                      <span className="info-card-date" style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', marginTop: 4 }}>
+                        🕒 {formatDatetimeDDMMMYYYY(info.displayFrom)} - {formatDatetimeDDMMMYYYY(info.displayTo)}
+                      </span>
+                    )}
                   </div>
                   <svg
                     className={`chevron ${isExpanded ? 'rotated' : ''}`}
@@ -171,7 +198,7 @@ export default function HomePage() {
                   >
                     <h4 style={{ fontWeight: 600, color: selectedExhibitionId === ex.id ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', marginBottom: 4 }}>{ex.title}</h4>
                     <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)', margin: 0 }}>
-                      {new Date(ex.eventPeriodFrom).toLocaleDateString()} - {new Date(ex.eventPeriodTo).toLocaleDateString()}
+                      {formatDateDDMMMYYYY(ex.eventPeriodFrom)} - {formatDateDDMMMYYYY(ex.eventPeriodTo)}
                     </p>
                   </button>
                 ))}
@@ -204,10 +231,6 @@ export default function HomePage() {
           font-weight: 800;
           margin-bottom: var(--space-3);
           line-height: 1.3;
-          background: var(--gradient-primary);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
         }
         .hero-desc {
           color: var(--color-text-secondary);

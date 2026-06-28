@@ -383,10 +383,6 @@ ul, ol {
   font-size: var(--font-size-2xl);
   font-weight: 700;
   margin-bottom: var(--space-4);
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .page-subtitle {

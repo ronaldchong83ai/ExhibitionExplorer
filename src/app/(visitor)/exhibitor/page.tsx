@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Exhibition, Exhibitor } from '@/types';
+import { formatDateDDMMMYYYY } from '@/lib/date';
 
 export default function ExhibitorPage() {
   const router = useRouter();
@@ -176,7 +177,7 @@ export default function ExhibitorPage() {
                 </div>
                 <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: 'var(--space-3)' }}>{ex.description}</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--font-size-xs)', color: 'var(--color-accent-cyan)', fontWeight: 500 }}>
-                  <span>📅 {new Date(ex.eventPeriodFrom).toLocaleDateString()} — {new Date(ex.eventPeriodTo).toLocaleDateString()}</span>
+                  <span>📅 {formatDateDDMMMYYYY(ex.eventPeriodFrom)} — {formatDateDDMMMYYYY(ex.eventPeriodTo)}</span>
                 </div>
               </div>
             ))
@@ -330,16 +331,43 @@ export default function ExhibitorPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <h3 style={{ margin: 0, fontSize: 'var(--font-size-base)', fontWeight: 700 }}>{p.name}</h3>
-                            <button 
-                              className="btn btn-secondary" 
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                handleOpenProfileForm(p); 
-                              }} 
-                              style={{ padding: '2px 8px', fontSize: 'var(--font-size-xs)' }}
-                            >
-                              ✏️ Edit
-                            </button>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button 
+                                className="btn btn-secondary" 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  handleOpenProfileForm(p); 
+                                }} 
+                                style={{ padding: '2px 8px', fontSize: 'var(--font-size-xs)' }}
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button 
+                                className="btn btn-icon" 
+                                onClick={async (e) => { 
+                                  e.stopPropagation(); 
+                                  if (!confirm("Are you sure you want to delete this exhibitor profile?")) return;
+                                  try {
+                                    const res = await fetch(`/api/exhibitor/profile?id=${p.id}`, { method: 'DELETE' }).then(r => r.json());
+                                    if (res.success) {
+                                      const profileRes = await fetch(`/api/exhibitor/profile?exhibitionId=${selectedExhibition.id}`);
+                                      const profileData = await profileRes.json();
+                                      if (profileData.success) {
+                                        setProfiles(profileData.data || []);
+                                      }
+                                    } else {
+                                      alert(res.error || 'Failed to delete profile');
+                                    }
+                                  } catch (err) {
+                                    console.error(err);
+                                    alert('Error deleting profile');
+                                  }
+                                }} 
+                                style={{ background: 'rgba(255, 107, 107, 0.1)', border: 'none', cursor: 'pointer', padding: '4px', borderRadius: 'var(--radius-sm)', color: 'var(--color-accent-coral)', width: '24px', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                              >
+                                ✕
+                              </button>
+                            </div>
                           </div>
                           <span className="badge badge-green" style={{ display: 'inline-block', marginTop: '4px' }}>Booth {p.boothNumber || 'N/A'}</span>
                           <p style={{ margin: '8px 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>

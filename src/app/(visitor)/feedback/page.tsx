@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function VisitorFeedbackPage() {
@@ -9,8 +9,23 @@ export default function VisitorFeedbackPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [exhibition, setExhibition] = useState<{ title: string } | null>(null);
 
   const characterLimit = 1000;
+
+  useEffect(() => {
+    const saved = localStorage.getItem('selectedExhibitionId');
+    if (saved) {
+      fetch(`/api/home?exhibitionId=${saved}`)
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.data && res.data.exhibition) {
+            setExhibition(res.data.exhibition);
+          }
+        })
+        .catch(err => console.error(err));
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,11 +57,49 @@ export default function VisitorFeedbackPage() {
     }
   };
 
+  const renderStyledPageTitle = (title: string) => {
+    const colors = ['#F6921E', '#3B82F6', '#10B981'];
+    let colorIndex = 0;
+    const emojiRegex = /^([\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}])\s*/u;
+    const match = title.match(emojiRegex);
+    let emoji = '';
+    let text = title;
+    if (match) {
+      emoji = match[0];
+      text = title.slice(emoji.length);
+    }
+    return (
+      <>
+        {emoji && <span>{emoji}</span>}
+        {text.split('').map((char, idx) => {
+          if (char === ' ') {
+            return <span key={idx}> </span>;
+          }
+          const color = colors[colorIndex % colors.length];
+          colorIndex++;
+          return (
+            <span key={idx} style={{ color }}>
+              {char}
+            </span>
+          );
+        })}
+      </>
+    );
+  };
+
   return (
     <div className="page-container" style={{ maxWidth: 540 }}>
-      <button onClick={() => router.back()} className="back-link">← Go Back</button>
-      <h2 className="page-title">💬 Share Your Feedback</h2>
-      <p className="page-subtitle">We value your thoughts. Let us know how we can make your exhibition experience even better!</p>
+      <h2 className="page-title" style={{ marginBottom: exhibition ? 4 : 'var(--space-4)' }}>
+        {renderStyledPageTitle("💬 Share Your Feedback")}
+      </h2>
+      {exhibition && (
+        <p className="page-subtitle" style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)', marginTop: 0, marginBottom: 'var(--space-4)' }}>
+          For {exhibition.title}
+        </p>
+      )}
+      <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-4)' }}>
+        We value your thoughts. Let us know how we can make your exhibition experience even better!
+      </p>
 
       {success ? (
         <div className="card success-card animate-scale-in" style={{ padding: 'var(--space-6)', textAlign: 'center' }}>

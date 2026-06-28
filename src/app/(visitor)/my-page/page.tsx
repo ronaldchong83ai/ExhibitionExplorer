@@ -12,9 +12,41 @@ const MY_PAGE_ITEMS = [
 export default function MyPagePage() {
   const router = useRouter();
 
+  const renderStyledPageTitle = (title: string) => {
+    const colors = ['#F6921E', '#3B82F6', '#10B981'];
+    let colorIndex = 0;
+    const emojiRegex = /^([\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}])\s*/u;
+    const match = title.match(emojiRegex);
+    let emoji = '';
+    let text = title;
+    if (match) {
+      emoji = match[0];
+      text = title.slice(emoji.length);
+    }
+    return (
+      <>
+        {emoji && <span>{emoji}</span>}
+        {text.split('').map((char, idx) => {
+          if (char === ' ') {
+            return <span key={idx}> </span>;
+          }
+          const color = colors[colorIndex % colors.length];
+          colorIndex++;
+          return (
+            <span key={idx} style={{ color }}>
+              {char}
+            </span>
+          );
+        })}
+      </>
+    );
+  };
+
   return (
     <div className="page-container">
-      <h2 className="page-title">👤 My Page</h2>
+      <h2 className="page-title">
+        {renderStyledPageTitle("👤 My Page")}
+      </h2>
 
       <div className="my-page-grid">
         {MY_PAGE_ITEMS.map((item, idx) => (

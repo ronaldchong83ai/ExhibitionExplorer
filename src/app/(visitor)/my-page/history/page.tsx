@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ActionLog } from '@/types';
+import { formatDatetimeDDMMMYYYY } from '@/lib/date';
 
 const ACTION_CONFIG: Record<string, { icon: string; label: string }> = {
   SCAN_QR: { icon: '📷', label: 'QR Scan' },
@@ -29,9 +30,7 @@ export default function HistoryPage() {
   }, []);
 
   const formatTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-      ' · ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return formatDatetimeDDMMMYYYY(dateStr);
   };
 
   return (
