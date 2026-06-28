@@ -15,7 +15,6 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [debugOtp, setDebugOtp] = useState('');
 
   useEffect(() => {
     fetch('/api/home')
@@ -65,9 +64,6 @@ export default function ForgotPasswordPage() {
       if (data.success) {
         setStep(2);
         setSuccessMessage(data.message || 'OTP has been sent to your email.');
-        if (data.debugOtp) {
-          setDebugOtp(data.debugOtp);
-        }
       } else {
         setError(data.error || 'Failed to send OTP. Please check your email.');
       }
@@ -182,24 +178,6 @@ export default function ForgotPasswordPage() {
               </div>
             )}
 
-            {debugOtp && (
-              <div 
-                style={{ 
-                  backgroundColor: 'rgba(59, 130, 246, 0.1)', 
-                  border: '1px solid var(--color-primary)', 
-                  color: 'var(--color-primary)', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  fontSize: 'var(--font-size-sm)',
-                  marginBottom: '16px',
-                  textAlign: 'center',
-                  fontWeight: 500
-                }}
-              >
-                💡 [Sandbox Test Tool] Your OTP code is: <strong style={{ fontSize: '16px', textDecoration: 'underline' }}>{debugOtp}</strong>
-              </div>
-            )}
-
             <div className="form-group">
               <label className="form-label" htmlFor="otp-input">Enter OTP</label>
               <input
@@ -214,42 +192,47 @@ export default function ForgotPasswordPage() {
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="new-password">New Password</label>
-              <input
-                id="new-password"
-                type="password"
-                className="form-input"
-                placeholder="Enter new password (min 6 chars)"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-            </div>
+            {/* Password fields only appear once 6 digits are fully entered */}
+            {otp.length === 6 && (
+              <div className="animate-scale-in">
+                <div className="form-group">
+                  <label className="form-label" htmlFor="new-password">New Password</label>
+                  <input
+                    id="new-password"
+                    type="password"
+                    className="form-input"
+                    placeholder="Enter new password (min 6 chars)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="confirm-password">Confirm Password</label>
-              <input
-                id="confirm-password"
-                type="password"
-                className="form-input"
-                placeholder="Confirm your new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="confirm-password">Confirm Password</label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    className="form-input"
+                    placeholder="Confirm your new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
 
-            {error && <div className="auth-error" style={{ marginBottom: '16px' }}>{error}</div>}
+                {error && <div className="auth-error" style={{ marginBottom: '16px' }}>{error}</div>}
 
-            <button
-              type="submit"
-              className="btn btn-primary btn-full btn-lg"
-              disabled={loading}
-              id="reset-password-submit"
-            >
-              {loading ? <span className="loading-spinner" /> : 'Reset Password'}
-            </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-full btn-lg"
+                  disabled={loading}
+                  id="reset-password-submit"
+                >
+                  {loading ? <span className="loading-spinner" /> : 'Reset Password'}
+                </button>
+              </div>
+            )}
           </form>
         )}
 
@@ -267,6 +250,77 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
       </div>
+
+      <style jsx>{`
+        .auth-page {
+          min-height: 100dvh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: var(--space-4);
+          padding-top: calc(var(--space-4) + var(--safe-top));
+          background: var(--gradient-dark);
+          position: relative;
+          overflow: hidden;
+        }
+        .auth-page::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                      radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+          pointer-events: none;
+        }
+        .auth-container {
+          width: 100%;
+          max-width: 400px;
+          position: relative;
+          z-index: 1;
+        }
+        .auth-logo {
+          text-align: center;
+          margin-bottom: var(--space-8);
+        }
+        .auth-title {
+          font-size: var(--font-size-3xl);
+          font-weight: 800;
+          background: var(--gradient-primary);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          margin-bottom: var(--space-2);
+        }
+        .auth-subtitle {
+          color: var(--color-text-secondary);
+          font-size: var(--font-size-base);
+        }
+        .auth-form {
+          margin-bottom: var(--space-2);
+        }
+        .auth-error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          border-radius: var(--radius-md);
+          padding: var(--space-3) var(--space-4);
+          color: var(--color-accent-coral);
+          font-size: var(--font-size-sm);
+          margin-bottom: var(--space-4);
+        }
+        .loading-spinner {
+          width: 20px;
+          height: 20px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

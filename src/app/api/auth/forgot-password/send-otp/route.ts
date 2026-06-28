@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getData } from '@/lib/db';
+import { sendOtpEmail } from '@/lib/email';
 
 if (!(global as any).otpStore) {
   (global as any).otpStore = new Map<string, { otp: string; expiresAt: number }>();
@@ -34,13 +35,16 @@ export async function POST(request: NextRequest) {
 
     otpStore.set(email.toLowerCase(), { otp, expiresAt });
 
-    console.log(`[Forgot Password OTP] OTP sent to ${email}: ${otp}`);
+    // Send the OTP to real email address
+    const emailSent = await sendOtpEmail(email, otp);
+    if (!emailSent) {
+      return Response.json({ success: false, error: 'Failed to send OTP email. Please try again.' }, { status: 500 });
+    }
 
-    // Return the OTP in response so that the client can display it for quick sandbox testing
+    // Return the response without the debug OTP
     return Response.json({ 
       success: true, 
-      message: 'OTP sent to your email address.',
-      debugOtp: otp // Developer/tester friendly debug OTP
+      message: 'OTP sent to your email address.'
     });
   } catch (err: any) {
     console.error('Send OTP Error:', err);
