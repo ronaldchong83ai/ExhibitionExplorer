@@ -130,7 +130,7 @@ export default function VisitorLayout({ children }: { children: React.ReactNode 
           </svg>
         </button>
 
-        <h1 className="header-title">ExhibitionExplorer</h1>
+        <h1 className="header-title">Exhibition Explorer</h1>
 
         <Link href="/notifications" className="header-bell-btn" id="notifications-bell">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -87,17 +87,11 @@ export default function HomePage() {
       {/* Exhibition Hero - Clickable to Switch */}
       {exhibition && (
         <div 
-          className="hero-card card-interactive animate-slide-up" 
-          onClick={() => setShowSelector(true)}
-          style={{ cursor: 'pointer', border: '1px solid var(--color-border-accent)' }}
+          className="hero-card animate-slide-up" 
+          style={{ border: '1px solid var(--color-border-accent)' }}
         >
           <div className="hero-gradient" />
           <div className="hero-content">
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
-              <span className="badge badge-blue" style={{ fontSize: 'var(--font-size-xs)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                ⇄ Switch Exhibition
-              </span>
-            </div>
             <h1 className="hero-title" style={{ marginTop: 4 }}>{renderStyledTitle(exhibition.title)}</h1>
             <p className="hero-desc">{exhibition.description}</p>
             <div className="hero-date">

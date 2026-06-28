@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [exhibitionTitle, setExhibitionTitle] = useState('Sports & Style Festival 2026 Singapore');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -19,7 +20,37 @@ export default function LoginPage() {
         setError(decodeURIComponent(err));
       }
     }
+
+    fetch('/api/home')
+      .then(res => res.json())
+      .then(d => {
+        if (d.success && d.data?.exhibition?.title) {
+          setExhibitionTitle(d.data.exhibition.title);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const renderStyledTitle = (title: string) => {
+    const colors = ['#F6921E', '#3B82F6', '#10B981'];
+    let colorIndex = 0;
+    return (
+      <span style={{ display: 'inline-block' }}>
+        {title.split('').map((char, idx) => {
+          if (char === ' ') {
+            return <span key={idx}> </span>;
+          }
+          const color = colors[colorIndex % colors.length];
+          colorIndex++;
+          return (
+            <span key={idx} style={{ color }}>
+              {char}
+            </span>
+          );
+        })}
+      </span>
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,22 +82,12 @@ export default function LoginPage() {
       <div className="auth-container animate-scale-in">
         {/* Logo Area */}
         <div className="auth-logo">
-          <div className="auth-logo-icon">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              <rect width="48" height="48" rx="12" fill="url(#logo-grad)" />
-              <path d="M14 20L24 12L34 20V34H14V20Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round" />
-              <path d="M20 34V26H28V34" stroke="white" strokeWidth="2.5" strokeLinejoin="round" />
-              <circle cx="24" cy="20" r="3" stroke="white" strokeWidth="2" />
-              <defs>
-                <linearGradient id="logo-grad" x1="0" y1="0" x2="48" y2="48">
-                  <stop stopColor="#3B82F6" />
-                  <stop offset="1" stopColor="#8B5CF6" />
-                </linearGradient>
-              </defs>
-            </svg>
+          <div style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, lineHeight: 1.3 }}>
+              {renderStyledTitle(exhibitionTitle)}
+            </h2>
           </div>
-          <h1 className="auth-title">ExhibitionExplorer</h1>
-          <p className="auth-subtitle">Your premium exhibition companion</p>
+          <h1 className="auth-title">Exhibition Explorer</h1>
         </div>
 
         {/* Login Form */}

@@ -196,7 +196,7 @@ export default function AddToHomeScreen() {
               </defs>
             </svg>
             <div className="ath-title-group">
-              <h3 className="ath-title">ExhibitionExplorer</h3>
+              <h3 className="ath-title">Exhibition Explorer</h3>
               <p className="ath-subtitle">Install as a Web App</p>
             </div>
           </div>

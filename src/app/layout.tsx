@@ -4,13 +4,13 @@ import StyledJsxRegistry from './registry';
 import AddToHomeScreen from '@/components/AddToHomeScreen';
 
 export const metadata: Metadata = {
-  title: 'ExhibitionExplorer',
+  title: 'Exhibition Explorer',
   description: 'Your premium exhibition companion app - explore stages, exhibitors, venue maps, and more.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'ExhibitionExplorer',
+    title: 'Exhibition Explorer',
   },
 };
 
