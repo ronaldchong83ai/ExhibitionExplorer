@@ -132,7 +132,9 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label className="form-label" htmlFor="reg-name">Full Name</label>
+            <label className="form-label" htmlFor="reg-name">
+              <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>Full Name
+            </label>
             <input
               id="reg-name"
               name="name"
@@ -147,7 +149,9 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="reg-email">Email</label>
+            <label className="form-label" htmlFor="reg-email">
+              <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>Email
+            </label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 id="reg-email"
@@ -274,7 +278,9 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="reg-password">Password</label>
+            <label className="form-label" htmlFor="reg-password">
+              <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>Password
+            </label>
             <input
               id="reg-password"
               name="password"
@@ -290,7 +296,9 @@ export default function RegisterPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="reg-confirm">Confirm Password</label>
+            <label className="form-label" htmlFor="reg-confirm">
+              <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>Confirm Password
+            </label>
             <input
               id="reg-confirm"
               name="confirmPassword"
@@ -309,7 +317,14 @@ export default function RegisterPage() {
           <button
             type="submit"
             className="btn btn-primary btn-full btn-lg"
-            disabled={loading || !isOtpVerified}
+            disabled={
+              loading || 
+              !isOtpVerified || 
+              !form.name.trim() || 
+              !form.email.trim() || 
+              !form.password || 
+              !form.confirmPassword
+            }
             id="register-submit"
           >
             {loading ? <span className="loading-spinner" /> : 'Create Account'}
