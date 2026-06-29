@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Return the response without the debug OTP
     return Response.json({ 
       success: true, 
-      message: 'OTP sent to your email address.'
+      message: 'OTP sent to your email address, check spam mail if not in inbox.'
     });
   } catch (err: any) {
     console.error('Send OTP Error:', err);

@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
 
       if (data.success) {
         setStep(2);
-        setSuccessMessage(data.message || 'OTP has been sent to your email.');
+        setSuccessMessage(data.message || 'OTP sent to your email address, check spam mail if not in inbox.');
       } else {
         setError(data.error || 'Failed to send OTP. Please check your email.');
       }
