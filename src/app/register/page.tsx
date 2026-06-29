@@ -199,7 +199,7 @@ export default function RegisterPage() {
             {otpSent && !isOtpVerified && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
                 <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
-                  Verification code sent.
+                  Verification code sent to email, check spam mail if not in Inbox.
                 </span>
                 <button
                   type="button"

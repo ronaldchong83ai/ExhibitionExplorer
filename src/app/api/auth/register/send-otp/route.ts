@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     return Response.json({ 
       success: true, 
-      message: 'OTP sent to your email address.'
+      message: 'Verification code sent to email, check spam mail if not in Inbox.'
     });
   } catch (err: any) {
     console.error('Send Registration OTP Error:', err);
