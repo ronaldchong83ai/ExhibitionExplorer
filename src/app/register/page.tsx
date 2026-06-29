@@ -10,14 +10,78 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // OTP Verification States
+  const [otp, setOtp] = useState('');
+  const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpSuccessMessage, setOtpSuccessMessage] = useState('');
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const isValidEmail = (emailStr: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
+  };
+
+  const handleSendOtp = async () => {
+    setError('');
+    setOtpSuccessMessage('');
+    setSendingOtp(true);
+    try {
+      const res = await fetch('/api/auth/register/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOtpSent(true);
+        setOtpSuccessMessage(data.message || 'OTP sent successfully.');
+      } else {
+        setError(data.error || 'Failed to send OTP.');
+      }
+    } catch {
+      setError('Network error sending OTP. Please try again.');
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setError('');
+    setOtpSuccessMessage('');
+    setVerifyingOtp(true);
+    try {
+      const res = await fetch('/api/auth/register/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, otp }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsOtpVerified(true);
+        setOtpSuccessMessage('Email verified successfully!');
+      } else {
+        setError(data.error || 'Invalid or expired OTP.');
+      }
+    } catch {
+      setError('Network error verifying OTP. Please try again.');
+    } finally {
+      setVerifyingOtp(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
+    if (!isOtpVerified) {
+      setError('Please verify your email address using OTP first.');
+      return;
+    }
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -84,18 +148,116 @@ export default function RegisterPage() {
 
           <div className="form-group">
             <label className="form-label" htmlFor="reg-email">Email</label>
-            <input
-              id="reg-email"
-              name="email"
-              type="email"
-              className="form-input"
-              placeholder="Enter your email"
-              value={form.email}
-              onChange={handleChange}
-              required
-              autoComplete="email"
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                id="reg-email"
+                name="email"
+                type="email"
+                className="form-input"
+                placeholder="Enter your email"
+                value={form.email}
+                onChange={handleChange}
+                required
+                disabled={isOtpVerified || otpSent}
+                autoComplete="email"
+                style={{ flex: 1 }}
+              />
+              {isValidEmail(form.email) && !otpSent && !isOtpVerified && (
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={sendingOtp}
+                  className="btn btn-primary"
+                  style={{ whiteSpace: 'nowrap', minWidth: '100px', fontSize: 'var(--font-size-sm)', padding: '0 12px' }}
+                >
+                  {sendingOtp ? <span className="loading-spinner" style={{ width: '16px', height: '16px', margin: 0 }} /> : 'Send OTP'}
+                </button>
+              )}
+              {isOtpVerified && (
+                <span 
+                  style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    color: 'var(--color-success)', 
+                    fontWeight: 600, 
+                    fontSize: 'var(--font-size-sm)',
+                    padding: '0 12px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--color-success)',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  ✓ Verified
+                </span>
+              )}
+            </div>
+            {otpSent && !isOtpVerified && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                  Verification code sent.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={sendingOtp}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-primary)',
+                    fontSize: 'var(--font-size-xs)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: 0
+                  }}
+                >
+                  {sendingOtp ? 'Sending...' : 'Resend Code'}
+                </button>
+              </div>
+            )}
           </div>
+
+          {otpSent && !isOtpVerified && (
+            <div className="form-group animate-scale-in" style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <label className="form-label" htmlFor="otp-input">Enter OTP</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  id="otp-input"
+                  type="text"
+                  className="form-input"
+                  placeholder="Enter the 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  maxLength={6}
+                  style={{ flex: 1, margin: 0 }}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyOtp}
+                  disabled={otp.length !== 6 || verifyingOtp}
+                  className="btn btn-primary"
+                  style={{ whiteSpace: 'nowrap', minWidth: '100px', fontSize: 'var(--font-size-sm)', padding: '0 12px' }}
+                >
+                  {verifyingOtp ? <span className="loading-spinner" style={{ width: '16px', height: '16px', margin: 0 }} /> : 'Verify'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {otpSuccessMessage && (
+            <div 
+              style={{ 
+                color: isOtpVerified ? 'var(--color-success)' : 'var(--color-primary)', 
+                fontSize: 'var(--font-size-sm)', 
+                margin: '8px 0', 
+                fontWeight: 500,
+                textAlign: 'center'
+              }}
+            >
+              {otpSuccessMessage}
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label" htmlFor="reg-contact">Contact Number</label>
@@ -147,7 +309,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             className="btn btn-primary btn-full btn-lg"
-            disabled={loading}
+            disabled={loading || !isOtpVerified}
             id="register-submit"
           >
             {loading ? <span className="loading-spinner" /> : 'Create Account'}

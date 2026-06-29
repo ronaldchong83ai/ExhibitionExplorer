@@ -19,6 +19,18 @@ export async function POST(request: NextRequest) {
       return Response.json({ success: false, error: 'An account with this email already exists' }, { status: 409 });
     }
 
+    if (!(global as any).otpStore) {
+      (global as any).otpStore = new Map<string, { otp: string; expiresAt: number }>();
+    }
+    const otpStore = (global as any).otpStore;
+    const isVerified = otpStore.get(`register_verified:${email.toLowerCase()}`);
+    if (!isVerified) {
+      return Response.json({ success: false, error: 'Please verify your email address using OTP first' }, { status: 400 });
+    }
+
+    // Clean up the verified flag
+    otpStore.delete(`register_verified:${email.toLowerCase()}`);
+
     const newUser: User = {
       id: generateId(),
       name,
