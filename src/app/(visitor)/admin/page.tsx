@@ -906,7 +906,7 @@ export default function AdminPage() {
                   <h4 style={{marginTop: 8}}>{info.title}</h4>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-secondary" onClick={() => { openForm(info.id, { title: info.title, type: info.type, description: info.description || '', displayFrom: info.displayFrom?.split('T')[0] || '', displayTo: info.displayTo?.split('T')[0] || '', details: info.details || '' }); }}>Edit</button>
+                  <button className="btn btn-secondary" onClick={() => { openForm(info.id, { title: info.title, type: info.type, description: info.description || '', displayFrom: info.displayFrom ? toLocalDatetimeString(info.displayFrom) : '', displayTo: info.displayTo ? toLocalDatetimeString(info.displayTo) : '', details: info.details || '' }); }}>Edit</button>
                   <button className="btn btn-icon" onClick={() => deleteHomeInfo(info.id)} style={{ background: 'rgba(255, 107, 107, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--color-accent-coral)', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                     ✕
                   </button>
@@ -937,8 +937,8 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div className="form-group"><label className="form-label">Description</label><textarea className="form-textarea" value={formData.description || ''} onChange={e => handleFormChange('description', e.target.value)} /></div>
-                  <div className="form-group"><label className="form-label">Date From</label><input className="form-input" type="date" value={formData.displayFrom || ''} onChange={e => handleFormChange('displayFrom', e.target.value)} /></div>
-                  <div className="form-group"><label className="form-label">Date To</label><input className="form-input" type="date" value={formData.displayTo || ''} onChange={e => handleFormChange('displayTo', e.target.value)} /></div>
+                  <div className="form-group"><label className="form-label">Date From</label><input className="form-input" type="datetime-local" value={formData.displayFrom || ''} onChange={e => handleFormChange('displayFrom', e.target.value)} /></div>
+                  <div className="form-group"><label className="form-label">Date To</label><input className="form-input" type="datetime-local" value={formData.displayTo || ''} onChange={e => handleFormChange('displayTo', e.target.value)} /></div>
                   <div className="form-group"><label className="form-label">Details</label><textarea className="form-textarea" value={formData.details || ''} onChange={e => handleFormChange('details', e.target.value)} /></div>
                   <div className="form-actions">
                     <button className="btn btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
