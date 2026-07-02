@@ -30,6 +30,10 @@ export async function POST(request: NextRequest) {
     return Response.json({ success: false, error: 'Stage Number is required' }, { status: 400 });
   }
 
+  if (new Date(body.periodTo).getTime() < new Date(body.periodFrom).getTime()) {
+    return Response.json({ success: false, error: 'Period To cannot be earlier than Period From' }, { status: 400 });
+  }
+
   const data = await getData();
   const item = {
     id: generateId(), exhibitionId: body.exhibitionId, title: body.title || '',
@@ -62,6 +66,13 @@ export async function PUT(request: NextRequest) {
   const data = await getData();
   const idx = data.stageEvents.findIndex(e => e.id === body.id);
   if (idx === -1) return Response.json({ success: false, error: 'Not found' }, { status: 404 });
+
+  const checkFrom = body.periodFrom !== undefined ? body.periodFrom : data.stageEvents[idx].periodFrom;
+  const checkTo = body.periodTo !== undefined ? body.periodTo : data.stageEvents[idx].periodTo;
+  if (new Date(checkTo).getTime() < new Date(checkFrom).getTime()) {
+    return Response.json({ success: false, error: 'Period To cannot be earlier than Period From' }, { status: 400 });
+  }
+
   data.stageEvents[idx] = { ...data.stageEvents[idx], ...body,
     periodFrom: body.periodFrom ? new Date(body.periodFrom).toISOString() : data.stageEvents[idx].periodFrom,
     periodTo: body.periodTo ? new Date(body.periodTo).toISOString() : data.stageEvents[idx].periodTo,

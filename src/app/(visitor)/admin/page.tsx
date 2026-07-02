@@ -630,6 +630,10 @@ export default function AdminPage() {
       alert("Stage Number is required");
       return;
     }
+    if (formData.timeTo < formData.timeFrom) {
+      alert("Time To cannot be earlier than Time From");
+      return;
+    }
 
     const body = {
       ...formData,

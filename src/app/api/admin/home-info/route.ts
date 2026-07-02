@@ -11,10 +11,26 @@ export async function GET(request: NextRequest) {
   console.log("[API/GET home-info] total homePageInfos count:", data.homePageInfos.length);
   const filtered = data.homePageInfos.filter(h => h.exhibitionId === exhibitionId);
   filtered.sort((a, b) => {
-    const tA = a.displayFrom ? new Date(a.displayFrom).getTime() : 0;
-    const tB = b.displayFrom ? new Date(b.displayFrom).getTime() : 0;
-    if (tA === 0 && tB !== 0) return 1;
-    if (tB === 0 && tA !== 0) return -1;
+    const hasDateA = !!a.displayFrom;
+    const hasDateB = !!b.displayFrom;
+
+    if (!hasDateA && !hasDateB) {
+      const typeWeight: Record<string, number> = {
+        'IMPORTANT_NOTICE': 1,
+        'ANNOUNCEMENT': 2,
+        'EVENT_INFO': 3
+      };
+      const wA = typeWeight[a.type] || 99;
+      const wB = typeWeight[b.type] || 99;
+      if (wA !== wB) return wA - wB;
+      return a.title.localeCompare(b.title);
+    }
+
+    if (!hasDateA && hasDateB) return -1;
+    if (hasDateA && !hasDateB) return 1;
+
+    const tA = new Date(a.displayFrom).getTime();
+    const tB = new Date(b.displayFrom).getTime();
     return tA - tB;
   });
   console.log("[API/GET home-info] filtered count:", filtered.length);
