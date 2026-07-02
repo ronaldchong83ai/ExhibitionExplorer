@@ -10,6 +10,13 @@ export async function GET(request: NextRequest) {
   const data = await getData();
   console.log("[API/GET home-info] total homePageInfos count:", data.homePageInfos.length);
   const filtered = data.homePageInfos.filter(h => h.exhibitionId === exhibitionId);
+  filtered.sort((a, b) => {
+    const tA = a.displayFrom ? new Date(a.displayFrom).getTime() : 0;
+    const tB = b.displayFrom ? new Date(b.displayFrom).getTime() : 0;
+    if (tA === 0 && tB !== 0) return 1;
+    if (tB === 0 && tA !== 0) return -1;
+    return tA - tB;
+  });
   console.log("[API/GET home-info] filtered count:", filtered.length);
   return Response.json({ success: true, data: filtered });
 }

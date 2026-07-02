@@ -24,7 +24,13 @@ export async function GET(request: Request) {
 
   const infos = data.homePageInfos
     .filter(h => h.exhibitionId === exhibition.id)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => {
+      const tA = a.displayFrom ? new Date(a.displayFrom).getTime() : 0;
+      const tB = b.displayFrom ? new Date(b.displayFrom).getTime() : 0;
+      if (tA === 0 && tB !== 0) return 1;
+      if (tB === 0 && tA !== 0) return -1;
+      return tA - tB;
+    });
 
   const version = await getCacheVersion('home');
   return withCacheHeaders({ success: true, data: { exhibition, exhibitions: enabledExhibitions, infos } }, version);
