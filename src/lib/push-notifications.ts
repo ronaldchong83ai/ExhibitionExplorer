@@ -154,3 +154,62 @@ function formatHours(h: number) {
   if (h === 1) return '1h';
   return `${h}h`;
 }
+
+/**
+ * Broadcasts a push notification and adds notification records to all users.
+ */
+export async function broadcastPushNotification(
+  title: string,
+  body: string,
+  url: string = '/'
+): Promise<{ success: boolean; sentCount: number }> {
+  const data = await getData();
+  let totalSent = 0;
+  const expiredEndpoints: string[] = [];
+
+  const payload = JSON.stringify({ title, body, url });
+
+  for (const user of data.users) {
+    const userSubs = data.pushSubscriptions.filter(sub => sub.userId === user.id);
+    
+    // Add historical notification record
+    data.notifications.push({
+      id: generateId(),
+      userId: user.id,
+      title,
+      body,
+      readAt: null,
+      createdAt: new Date().toISOString(),
+    });
+
+    // Send push if user is subscribed
+    for (const sub of userSubs) {
+      try {
+        const keysObj = JSON.parse(sub.keys);
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: keysObj.p256dh,
+            auth: keysObj.auth,
+          },
+        };
+        await webpush.sendNotification(pushSubscription, payload);
+        totalSent++;
+      } catch (err: any) {
+        console.error(`Failed to send push to endpoint: ${sub.endpoint}`, err.statusCode || err);
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          expiredEndpoints.push(sub.endpoint);
+        }
+      }
+    }
+  }
+
+  if (expiredEndpoints.length > 0) {
+    data.pushSubscriptions = data.pushSubscriptions.filter(
+      sub => !expiredEndpoints.includes(sub.endpoint)
+    );
+  }
+
+  await saveData(data);
+  return { success: true, sentCount: totalSent };
+}

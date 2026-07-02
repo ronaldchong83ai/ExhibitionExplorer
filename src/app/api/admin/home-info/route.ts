@@ -54,6 +54,16 @@ export async function POST(request: NextRequest) {
   };
   data.homePageInfos.push(item);
   await saveData(data);
+
+  if (item.type === 'IMPORTANT_NOTICE' && !item.displayFrom) {
+    const { broadcastPushNotification } = await import('@/lib/push-notifications');
+    await broadcastPushNotification(
+      `⚠️ ${item.title}`,
+      item.description || 'An important notice has been posted.',
+      '/home'
+    );
+  }
+
   return Response.json({ success: true, data: item });
 }
 
