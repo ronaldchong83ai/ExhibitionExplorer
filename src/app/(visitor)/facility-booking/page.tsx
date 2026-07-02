@@ -325,9 +325,6 @@ export default function FacilityBookingPage() {
           For {exhibition.title}
         </p>
       )}
-      <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--space-4)' }}>
-        Reserve meeting rooms, booths, and key workspaces inside the exhibition center.
-      </p>
 
       {error && (
         <div className="error-banner animate-fade-in" style={{ marginBottom: 'var(--space-4)', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 'var(--radius-md)', color: 'rgb(248, 113, 113)', fontSize: 'var(--font-size-sm)' }}>

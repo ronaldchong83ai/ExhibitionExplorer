@@ -1038,7 +1038,7 @@ export default function AdminPage() {
             <div 
               key={ex.id} 
               className="admin-card card card-interactive animate-scale-in" 
-              onClick={() => router.push(`/exhibitors/${ex.id}`)}
+              onClick={() => router.push(`/exhibitors/${ex.id}?fromAdmin=true`)}
               style={{ cursor: 'pointer' }}
             >
               <div className="admin-card-header">

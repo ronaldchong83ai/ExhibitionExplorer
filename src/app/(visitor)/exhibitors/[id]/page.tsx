@@ -155,7 +155,9 @@ export default function ExhibitorDetailPage({ params }: { params: Promise<{ id: 
   };
 
   const handleBack = () => {
-    if (user && user.role === 'ADMIN') {
+    const searchParams = new URLSearchParams(window.location.search);
+    const fromAdmin = searchParams.get('fromAdmin') === 'true';
+    if (fromAdmin) {
       router.push(`/admin?section=exhibitors&exhibitionId=${exhibitor?.exhibitionId || ''}`);
     } else {
       router.back();

@@ -118,9 +118,18 @@ export default function ExhibitorsPage() {
               onClick={() => router.push(`/exhibitors/${exhibitor.id}`)}
             >
               <div className="exhibitor-header">
-                <div className="exhibitor-avatar">
-                  {exhibitor.name.charAt(0).toUpperCase()}
-                </div>
+                {exhibitor.imageUrl ? (
+                  <img
+                    src={exhibitor.imageUrl}
+                    alt={exhibitor.name}
+                    className="exhibitor-avatar"
+                    style={{ objectFit: 'cover', border: '1px solid var(--color-border)' }}
+                  />
+                ) : (
+                  <div className="exhibitor-avatar">
+                    {exhibitor.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div className="exhibitor-info">
                   <h3 className="exhibitor-name">{exhibitor.name}</h3>
                   <span className="badge badge-green">Booth {exhibitor.boothNumber}</span>
