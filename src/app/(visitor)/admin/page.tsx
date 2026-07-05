@@ -878,6 +878,165 @@ export default function AdminPage() {
     document.execCommand(command, false, value);
   };
 
+  const getSelectedCell = (): HTMLTableCellElement | null => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+    let node: Node | null = selection.getRangeAt(0).startContainer;
+    
+    while (node && node !== editorRef.current) {
+      if (node.nodeName === 'TD' || node.nodeName === 'TH') {
+        return node as HTMLTableCellElement;
+      }
+      node = node.parentNode;
+    }
+    return null;
+  };
+
+  const getSelectedTable = (cell: HTMLTableCellElement): HTMLTableElement | null => {
+    let node: Node | null = cell;
+    while (node && node !== editorRef.current) {
+      if (node.nodeName === 'TABLE') {
+        return node as HTMLTableElement;
+      }
+      node = node.parentNode;
+    }
+    return null;
+  };
+
+  const insertTable = () => {
+    const rowsInput = prompt("Enter number of rows:", "2");
+    if (!rowsInput) return;
+    const colsInput = prompt("Enter number of columns:", "2");
+    if (!colsInput) return;
+
+    const rows = parseInt(rowsInput);
+    const cols = parseInt(colsInput);
+    if (isNaN(rows) || isNaN(cols) || rows <= 0 || cols <= 0) {
+      alert("Invalid number of rows or columns.");
+      return;
+    }
+
+    let tableHtml = `<table style="width: 100%; border-collapse: collapse; margin: 12px 0; border: 1px solid var(--color-border);">`;
+    tableHtml += `<tbody>`;
+    for (let r = 0; r < rows; r++) {
+      tableHtml += `<tr>`;
+      for (let c = 0; c < cols; c++) {
+        tableHtml += `<td style="border: 1px solid var(--color-border); padding: 8px; min-width: 50px;">Cell</td>`;
+      }
+      tableHtml += `</tr>`;
+    }
+    tableHtml += `</tbody></table><p><br></p>`;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    
+    if (editorRef.current && !editorRef.current.contains(range.commonAncestorContainer)) {
+      editorRef.current.focus();
+    }
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = tableHtml;
+    const tableNode = tempDiv.firstChild;
+    const pNode = tempDiv.lastChild;
+    if (tableNode) {
+      range.deleteContents();
+      range.insertNode(tableNode);
+      if (pNode) {
+        range.collapse(false);
+        range.insertNode(pNode);
+      }
+    }
+  };
+
+  const addRow = () => {
+    const cell = getSelectedCell();
+    if (!cell) {
+      alert("Please click inside a table cell first.");
+      return;
+    }
+    const tr = cell.parentElement as HTMLTableRowElement;
+    const table = getSelectedTable(cell);
+    if (!tr || !table) return;
+
+    const colCount = tr.cells.length;
+    const newRow = table.insertRow(tr.rowIndex + 1);
+    for (let i = 0; i < colCount; i++) {
+      const newCell = newRow.insertCell(i);
+      newCell.innerHTML = "Cell";
+      newCell.setAttribute("style", "border: 1px solid var(--color-border); padding: 8px; min-width: 50px;");
+    }
+  };
+
+  const addColumn = () => {
+    const cell = getSelectedCell();
+    if (!cell) {
+      alert("Please click inside a table cell first.");
+      return;
+    }
+    const table = getSelectedTable(cell);
+    if (!table) return;
+
+    const colIndex = cell.cellIndex;
+    const rows = table.rows;
+    for (let i = 0; i < rows.length; i++) {
+      const newCell = rows[i].insertCell(colIndex + 1);
+      newCell.innerHTML = "Cell";
+      newCell.setAttribute("style", "border: 1px solid var(--color-border); padding: 8px; min-width: 50px;");
+    }
+  };
+
+  const deleteRow = () => {
+    const cell = getSelectedCell();
+    if (!cell) {
+      alert("Please click inside a table cell first.");
+      return;
+    }
+    const tr = cell.parentElement as HTMLTableRowElement;
+    const table = getSelectedTable(cell);
+    if (!tr || !table) return;
+
+    table.deleteRow(tr.rowIndex);
+    if (table.rows.length === 0) {
+      table.remove();
+    }
+  };
+
+  const deleteColumn = () => {
+    const cell = getSelectedCell();
+    if (!cell) {
+      alert("Please click inside a table cell first.");
+      return;
+    }
+    const table = getSelectedTable(cell);
+    if (!table) return;
+
+    const colIndex = cell.cellIndex;
+    const rows = table.rows;
+    
+    const isLastCol = rows[0]?.cells.length <= 1;
+    if (isLastCol) {
+      table.remove();
+      return;
+    }
+
+    for (let i = 0; i < rows.length; i++) {
+      rows[i].deleteCell(colIndex);
+    }
+  };
+
+  const deleteTable = () => {
+    const cell = getSelectedCell();
+    if (!cell) {
+      alert("Please click inside a table cell first.");
+      return;
+    }
+    const table = getSelectedTable(cell);
+    if (!table) return;
+
+    table.remove();
+  };
+
   const addVisitorToCollections = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeVoucherForCollections) return;
@@ -2357,6 +2516,64 @@ export default function AdminPage() {
                 <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', minWidth: '32px', height: '32px', fontWeight: 'bold' }} onClick={() => applyFormat('bold')}>B</button>
                 <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', minWidth: '32px', height: '32px', fontStyle: 'italic' }} onClick={() => applyFormat('italic')}>I</button>
                 <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', minWidth: '32px', height: '32px', textDecoration: 'underline' }} onClick={() => applyFormat('underline')}>U</button>
+              </div>
+
+              {/* Table Functions */}
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '2px 6px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px' }} 
+                  onClick={insertTable}
+                  title="Create Table"
+                >
+                  📅 +Table
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ padding: '4px 6px', fontSize: 'var(--font-size-xs)', height: '32px' }} 
+                  onClick={addRow}
+                  title="Add Row"
+                >
+                  ➕ Row
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ padding: '4px 6px', fontSize: 'var(--font-size-xs)', height: '32px' }} 
+                  onClick={addColumn}
+                  title="Add Column"
+                >
+                  ➕ Col
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ padding: '4px 6px', fontSize: 'var(--font-size-xs)', height: '32px', color: 'var(--color-accent-coral)' }} 
+                  onClick={deleteRow}
+                  title="Delete Row"
+                >
+                  ➖ Row
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ padding: '4px 6px', fontSize: 'var(--font-size-xs)', height: '32px', color: 'var(--color-accent-coral)' }} 
+                  onClick={deleteColumn}
+                  title="Delete Column"
+                >
+                  ➖ Col
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ padding: '4px 6px', fontSize: 'var(--font-size-xs)', height: '32px', color: 'var(--color-accent-coral)' }} 
+                  onClick={deleteTable}
+                  title="Delete Table"
+                >
+                  🗑️ Table
+                </button>
               </div>
 
               {/* Insert Image Actions */}
