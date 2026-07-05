@@ -2518,66 +2518,6 @@ export default function AdminPage() {
                 <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', minWidth: '32px', height: '32px', textDecoration: 'underline' }} onClick={() => applyFormat('underline')}>U</button>
               </div>
 
-              {/* Insert Image Actions */}
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px' }} 
-                  onClick={() => {
-                    const url = prompt("Enter image URL:");
-                    if (url) applyFormat('insertImage', url);
-                  }}
-                >
-                  🔗 Image URL
-                </button>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <label 
-                    className="btn btn-secondary" 
-                    style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0 }}
-                  >
-                    📁 Upload Image
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      style={{ display: 'none' }} 
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (file.size > 1024 * 1024) {
-                          alert("Image is too large. Please select an image under 1MB.");
-                          return;
-                        }
-                        const reader = new FileReader();
-                        reader.onload = async (event) => {
-                          const base64 = event.target?.result as string;
-                          if (!base64) return;
-                          
-                          try {
-                            const res = await postData('/api/admin/about-us/upload', {
-                              exhibitionId: selectedExhibition,
-                              image: base64
-                            });
-                            if (res.success && res.url) {
-                              setAboutUsUploadedImages(prev => [res.url, ...prev]);
-                              alert("Upload successful! You can copy the web link from the list below.");
-                            } else {
-                              alert(res.error || "Failed to upload image.");
-                            }
-                          } catch (err) {
-                            console.error(err);
-                            alert("Upload failed.");
-                          }
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                    />
-                  </label>
-                  <span style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
-                </div>
-              </div>
-
               {/* Table Functions */}
               <div style={{ display: 'flex', gap: '4px', alignItems: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '2px 6px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
                 <button 
@@ -2665,6 +2605,66 @@ export default function AdminPage() {
                     <path d="M18 6l-12 12M6 6l12 12" stroke="var(--color-accent-coral)" strokeWidth="2.5"/>
                   </svg>
                 </button>
+              </div>
+
+              {/* Insert Image Actions */}
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px' }} 
+                  onClick={() => {
+                    const url = prompt("Enter image URL:");
+                    if (url) applyFormat('insertImage', url);
+                  }}
+                >
+                  🔗 Image URL
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <label 
+                    className="btn btn-secondary" 
+                    style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0 }}
+                  >
+                    📁 Upload Image
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: 'none' }} 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 1024 * 1024) {
+                          alert("Image is too large. Please select an image under 1MB.");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = async (event) => {
+                          const base64 = event.target?.result as string;
+                          if (!base64) return;
+                          
+                          try {
+                            const res = await postData('/api/admin/about-us/upload', {
+                              exhibitionId: selectedExhibition,
+                              image: base64
+                            });
+                            if (res.success && res.url) {
+                              setAboutUsUploadedImages(prev => [res.url, ...prev]);
+                              alert("Upload successful! You can copy the web link from the list below.");
+                            } else {
+                              alert(res.error || "Failed to upload image.");
+                            }
+                          } catch (err) {
+                            console.error(err);
+                            alert("Upload failed.");
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                  <span style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
+                </div>
               </div>
             </div>
 
