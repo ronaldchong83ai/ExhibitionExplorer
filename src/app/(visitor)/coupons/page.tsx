@@ -219,7 +219,9 @@ export default function CouponsPage() {
       if (res.success && res.data) {
         setCollectedVisitors(prev => {
           if (prev.some(v => v.userId === res.data.userId)) return prev;
-          return [res.data, ...prev];
+          const updated = [...prev, res.data];
+          updated.sort((a, b) => new Date(a.collectedAt).getTime() - new Date(b.collectedAt).getTime());
+          return updated;
         });
         setNewVisitorEmail('');
       } else {
@@ -407,6 +409,12 @@ export default function CouponsPage() {
                       <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                         <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{visitor.name}</span>
                         <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{visitor.email}</span>
+                        <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
+                          🕒 Collected: {formatDatetimeDDMMMYYYY(visitor.collectedAt)}
+                        </span>
+                        <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
+                          🎁 Gifted By: {visitor.giftedBy || 'Self-collected'}
+                        </span>
                       </div>
                       <button
                         className="btn btn-icon"

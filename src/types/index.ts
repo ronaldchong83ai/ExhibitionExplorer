@@ -110,6 +110,7 @@ export interface VoucherCollection {
   voucherId: string;
   userId: string;
   collectedAt: string;
+  giftedBy?: string | null;
 }
 
 export interface VoucherScan {

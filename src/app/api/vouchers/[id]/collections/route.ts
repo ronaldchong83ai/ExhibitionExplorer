@@ -23,11 +23,12 @@ export async function GET(
       name: user ? user.name : 'Unknown User',
       email: user ? user.email : 'Unknown Email',
       collectedAt: c.collectedAt,
+      giftedBy: c.giftedBy || null,
     };
   });
 
-  // Sort by collectedAt date descending (newest first)
-  result.sort((a, b) => new Date(b.collectedAt).getTime() - new Date(a.collectedAt).getTime());
+  // Sort by collectedAt date ascending (earliest first)
+  result.sort((a, b) => new Date(a.collectedAt).getTime() - new Date(b.collectedAt).getTime());
 
   return Response.json({ success: true, data: result });
 }
@@ -72,6 +73,7 @@ export async function POST(
     voucherId: id,
     userId: user.id,
     collectedAt: new Date().toISOString(),
+    giftedBy: session.email,
   };
 
   data.voucherCollections.push(newCollection);
@@ -85,6 +87,7 @@ export async function POST(
       name: user.name,
       email: user.email,
       collectedAt: newCollection.collectedAt,
+      giftedBy: newCollection.giftedBy,
     },
   });
 }

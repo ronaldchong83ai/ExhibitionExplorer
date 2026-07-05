@@ -763,7 +763,9 @@ export default function AdminPage() {
       if (res.success && res.data) {
         setCollectedVisitors(prev => {
           if (prev.some(v => v.userId === res.data.userId)) return prev;
-          return [res.data, ...prev];
+          const updated = [...prev, res.data];
+          updated.sort((a, b) => new Date(a.collectedAt).getTime() - new Date(b.collectedAt).getTime());
+          return updated;
         });
         setNewVisitorEmail('');
       } else {
@@ -1276,7 +1278,14 @@ export default function AdminPage() {
               <span className="admin-card-date" style={{ display: 'block', marginTop: 4, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                 🕒 Display: {v.displayFrom && v.displayTo ? `${formatDatetimeDDMMMYYYY(v.displayFrom)} - ${formatDatetimeDDMMMYYYY(v.displayTo)}` : 'Always active'}
               </span>
-              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 4 }}>Required scans: {v.requiredScanIds.join(', ')}</p>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 6 }}>
+                <span style={{ fontWeight: 600, display: 'block', marginBottom: 2 }}>Required scans:</span>
+                <ul style={{ paddingLeft: '16px', margin: '2px 0', listStyleType: 'disc', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {v.requiredScanIds.map((scanId, sIdx) => (
+                    <li key={sIdx}>{scanId}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           ))}
           {showCollectionsModal && activeVoucherForCollections && (
@@ -1316,6 +1325,12 @@ export default function AdminPage() {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{visitor.name}</span>
                             <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{visitor.email}</span>
+                            <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
+                              🕒 Collected: {formatDatetimeDDMMMYYYY(visitor.collectedAt)}
+                            </span>
+                            <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)' }}>
+                              🎁 Gifted By: {visitor.giftedBy || 'Self-collected'}
+                            </span>
                           </div>
                           <button
                             className="btn btn-icon"

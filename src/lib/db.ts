@@ -581,13 +581,15 @@ export async function saveData(data: DataStore): Promise<void> {
       update: {
         voucherId: c.voucherId,
         userId: c.userId,
-        collectedAt: new Date(c.collectedAt)
+        collectedAt: new Date(c.collectedAt),
+        giftedBy: c.giftedBy || null
       },
       create: {
         id: c.id,
         voucherId: c.voucherId,
         userId: c.userId,
-        collectedAt: new Date(c.collectedAt)
+        collectedAt: new Date(c.collectedAt),
+        giftedBy: c.giftedBy || null
       }
     })),
     prisma.voucherCollection.deleteMany({
