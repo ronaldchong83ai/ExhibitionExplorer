@@ -75,6 +75,10 @@ export default function ExhibitorDetailPage({ params }: { params: Promise<{ id: 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 1024 * 1024) {
+        alert("Image is too large. Please select an image under 1MB.");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
@@ -329,6 +333,7 @@ export default function ExhibitorDetailPage({ params }: { params: Promise<{ id: 
                   <label htmlFor="product-image-upload-detail" className="btn btn-secondary" style={{ cursor: 'pointer', margin: 0 }}>
                     Choose File
                   </label>
+                  <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
                   {productFormData.imageUrl && (
                     <img 
                       src={productFormData.imageUrl} 

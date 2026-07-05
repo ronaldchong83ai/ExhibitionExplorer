@@ -1213,6 +1213,10 @@ export default function AdminPage() {
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (file) {
+                    if (file.size > 1024 * 1024) {
+                      alert("Image is too large. Please select an image under 1MB.");
+                      return;
+                    }
                     const reader = new FileReader();
                     reader.onloadend = async () => {
                       const base64String = reader.result as string;
@@ -1241,13 +1245,16 @@ export default function AdminPage() {
                 style={{ display: 'none' }}
                 id="venue-map-upload-input"
               />
-              <label 
-                htmlFor="venue-map-upload-input" 
-                className="btn btn-primary" 
-                style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-              >
-                📤 Choose Map Image
-              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <label 
+                  htmlFor="venue-map-upload-input" 
+                  className="btn btn-primary" 
+                  style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', margin: 0 }}
+                >
+                  📤 Choose Map Image
+                </label>
+                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
+              </div>
 
               {venueMap?.imageUrl ? (
                 <div style={{ width: '100%', maxWidth: '500px', marginTop: '10px', textAlign: 'center' }}>
@@ -2287,27 +2294,34 @@ export default function AdminPage() {
                   🔗 Image URL
                 </button>
 
-                <label 
-                  className="btn btn-secondary" 
-                  style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0 }}
-                >
-                  📁 Upload Image
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    style={{ display: 'none' }} 
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        const base64 = event.target?.result as string;
-                        if (base64) applyFormat('insertImage', base64);
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                  />
-                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <label 
+                    className="btn btn-secondary" 
+                    style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0 }}
+                  >
+                    📁 Upload Image
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: 'none' }} 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 1024 * 1024) {
+                          alert("Image is too large. Please select an image under 1MB.");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const base64 = event.target?.result as string;
+                          if (base64) applyFormat('insertImage', base64);
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                  <span style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
+                </div>
               </div>
             </div>
 
