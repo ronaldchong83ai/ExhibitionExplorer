@@ -2293,35 +2293,6 @@ export default function AdminPage() {
                 >
                   🔗 Image URL
                 </button>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <label 
-                    className="btn btn-secondary" 
-                    style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0 }}
-                  >
-                    📁 Upload Image
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      style={{ display: 'none' }} 
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (file.size > 1024 * 1024) {
-                          alert("Image is too large. Please select an image under 1MB.");
-                          return;
-                        }
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          const base64 = event.target?.result as string;
-                          if (base64) applyFormat('insertImage', base64);
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                    />
-                  </label>
-                  <span style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
-                </div>
               </div>
             </div>
 
