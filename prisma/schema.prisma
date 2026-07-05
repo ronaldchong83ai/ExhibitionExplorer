@@ -67,6 +67,7 @@ model Exhibitor {
   details        String
   allowedUserIds String[]
   createdAt      DateTime @default(now())
+  hasTrophy      Boolean  @default(false)
 }
 
 model Product {

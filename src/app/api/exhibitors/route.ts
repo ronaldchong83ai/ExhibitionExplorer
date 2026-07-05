@@ -20,7 +20,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  exhibitors.sort((a, b) => a.boothNumber.localeCompare(b.boothNumber));
+  exhibitors.sort((a, b) => {
+    const aTrophy = a.hasTrophy ? 1 : 0;
+    const bTrophy = b.hasTrophy ? 1 : 0;
+    if (aTrophy !== bTrophy) return bTrophy - aTrophy;
+    return a.boothNumber.localeCompare(b.boothNumber);
+  });
 
   const exhibition = data.exhibitions.find(e => e.id === exhibitionId) || null;
   const version = await getCacheVersion('exhibitors');

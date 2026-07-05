@@ -213,7 +213,9 @@ export default function ExhibitorDetailPage({ params }: { params: Promise<{ id: 
             {exhibitor.name.charAt(0).toUpperCase()}
           </div>
         )}
-        <h1 className="exhibitor-hero-name">{exhibitor.name}</h1>
+        <h1 className="exhibitor-hero-name">
+          {exhibitor.name} {exhibitor.hasTrophy && <span title="Featured Exhibitor" style={{ marginLeft: 4 }}>🏆</span>}
+        </h1>
         <span className="badge badge-green" style={{ marginBottom: 'var(--space-3)' }}>
           Booth {exhibitor.boothNumber}
         </span>

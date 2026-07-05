@@ -131,7 +131,9 @@ export default function ExhibitorsPage() {
                   </div>
                 )}
                 <div className="exhibitor-info">
-                  <h3 className="exhibitor-name">{exhibitor.name}</h3>
+                  <h3 className="exhibitor-name">
+                    {exhibitor.name} {exhibitor.hasTrophy && <span title="Featured Exhibitor" style={{ marginLeft: 4 }}>🏆</span>}
+                  </h3>
                   <span className="badge badge-green">Booth {exhibitor.boothNumber}</span>
                 </div>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="chevron-icon">

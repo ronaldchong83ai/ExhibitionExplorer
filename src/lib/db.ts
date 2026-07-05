@@ -312,7 +312,8 @@ export async function saveData(data: DataStore): Promise<void> {
         imageUrl: e.imageUrl,
         details: e.details,
         allowedUserIds: e.allowedUserIds,
-        createdAt: new Date(e.createdAt)
+        createdAt: new Date(e.createdAt),
+        hasTrophy: e.hasTrophy ?? false
       },
       create: {
         id: e.id,
@@ -323,7 +324,8 @@ export async function saveData(data: DataStore): Promise<void> {
         imageUrl: e.imageUrl,
         details: e.details,
         allowedUserIds: e.allowedUserIds,
-        createdAt: new Date(e.createdAt)
+        createdAt: new Date(e.createdAt),
+        hasTrophy: e.hasTrophy ?? false
       }
     })),
     prisma.exhibitor.deleteMany({

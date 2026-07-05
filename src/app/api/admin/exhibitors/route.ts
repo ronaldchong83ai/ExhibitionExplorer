@@ -8,7 +8,12 @@ export async function GET(request: NextRequest) {
   const exhibitionId = request.nextUrl.searchParams.get('exhibitionId') || '';
   const data = await getData();
   const filtered = data.exhibitors.filter(e => e.exhibitionId === exhibitionId);
-  filtered.sort((a, b) => a.boothNumber.localeCompare(b.boothNumber));
+  filtered.sort((a, b) => {
+    const aTrophy = a.hasTrophy ? 1 : 0;
+    const bTrophy = b.hasTrophy ? 1 : 0;
+    if (aTrophy !== bTrophy) return bTrophy - aTrophy;
+    return a.boothNumber.localeCompare(b.boothNumber);
+  });
   return Response.json({ success: true, data: filtered });
 }
 
@@ -28,6 +33,7 @@ export async function POST(request: NextRequest) {
   const item = {
     id: generateId(), exhibitionId: body.exhibitionId, name: body.name || '', description: body.description || '',
     boothNumber: body.boothNumber || '', imageUrl: '', details: body.details || '', allowedUserIds: [session.id], createdAt: new Date().toISOString(),
+    hasTrophy: body.hasTrophy ?? false
   };
   data.exhibitors.push(item);
   await saveData(data);
@@ -49,7 +55,14 @@ export async function PUT(request: NextRequest) {
   const data = await getData();
   const idx = data.exhibitors.findIndex(e => e.id === body.id);
   if (idx === -1) return Response.json({ success: false, error: 'Not found' }, { status: 404 });
-  data.exhibitors[idx] = { ...data.exhibitors[idx], name: body.name ?? data.exhibitors[idx].name, description: body.description ?? data.exhibitors[idx].description, boothNumber: body.boothNumber ?? data.exhibitors[idx].boothNumber, details: body.details ?? data.exhibitors[idx].details };
+  data.exhibitors[idx] = { 
+    ...data.exhibitors[idx], 
+    name: body.name ?? data.exhibitors[idx].name, 
+    description: body.description ?? data.exhibitors[idx].description, 
+    boothNumber: body.boothNumber ?? data.exhibitors[idx].boothNumber, 
+    details: body.details ?? data.exhibitors[idx].details,
+    hasTrophy: body.hasTrophy ?? data.exhibitors[idx].hasTrophy
+  };
   await saveData(data);
   return Response.json({ success: true, data: data.exhibitors[idx] });
 }

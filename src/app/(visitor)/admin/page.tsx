@@ -90,7 +90,7 @@ export default function AdminPage() {
   // Form states
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
   // Voucher Collections Manager states
   const [showCollectionsModal, setShowCollectionsModal] = useState(false);
@@ -540,7 +540,7 @@ export default function AdminPage() {
     }
   };
 
-  const openForm = (id?: string, initialData?: Record<string, string>, requiredScanIdsArray?: string[], operatingHoursArray?: Array<{ date: string; timeFrom: string; timeTo: string }>) => {
+  const openForm = (id?: string, initialData?: Record<string, any>, requiredScanIdsArray?: string[], operatingHoursArray?: Array<{ date: string; timeFrom: string; timeTo: string }>) => {
     setEditingId(id || null);
     setFormData(initialData || { enabled: 'true' });
     setFormScanIds(requiredScanIdsArray || []);
@@ -553,7 +553,7 @@ export default function AdminPage() {
     setShowForm(true);
   };
 
-  const handleFormChange = (key: string, value: string) => {
+  const handleFormChange = (key: string, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
@@ -669,7 +669,7 @@ export default function AdminPage() {
       exhibitionId: selectedExhibition,
       periodFrom: new Date(formData.eventDate + 'T' + formData.timeFrom).toISOString(),
       periodTo: new Date(formData.eventDate + 'T' + formData.timeTo).toISOString(),
-      speakerNames: formData.speakerNames?.split(',').map(s => s.trim()) || []
+      speakerNames: (formData.speakerNames as string)?.split(',').map((s: string) => s.trim()) || []
     };
     const d = editingId ? await putData('/api/admin/stage-events', body) : await postData('/api/admin/stage-events', body);
     if (d.success) {
@@ -699,6 +699,32 @@ export default function AdminPage() {
       if (reload.success) setExhibitors(reload.data);
     } else {
       alert(d.error || "Failed to save exhibitor");
+    }
+  };
+
+  const toggleExhibitorTrophy = async (ex: Exhibitor) => {
+    try {
+      const res = await putData('/api/admin/exhibitors', {
+        id: ex.id,
+        hasTrophy: !ex.hasTrophy
+      });
+      if (res.success) {
+        setExhibitors(prev => {
+          const updated = prev.map(item => item.id === ex.id ? { ...item, hasTrophy: !ex.hasTrophy } : item);
+          updated.sort((a, b) => {
+            const aTrophy = a.hasTrophy ? 1 : 0;
+            const bTrophy = b.hasTrophy ? 1 : 0;
+            if (aTrophy !== bTrophy) return bTrophy - aTrophy;
+            return a.boothNumber.localeCompare(b.boothNumber);
+          });
+          return updated;
+        });
+      } else {
+        alert(res.error || "Failed to update trophy status");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update trophy status");
     }
   };
 
@@ -1127,16 +1153,41 @@ export default function AdminPage() {
               style={{ cursor: 'pointer' }}
             >
               <div className="admin-card-header">
-                <h4>{ex.name} <span className="badge badge-green">Booth {ex.boothNumber}</span></h4>
+                <h4>
+                  {ex.name} {ex.hasTrophy && <span style={{ marginLeft: 4 }} title="Featured (Trophy)">🏆</span>}
+                  <span className="badge badge-green" style={{ marginLeft: 8 }}>Booth {ex.boothNumber}</span>
+                </h4>
                 <div style={{ display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
+                  <button
+                    className="btn btn-icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExhibitorTrophy(ex);
+                    }}
+                    title={ex.hasTrophy ? "Remove Trophy" : "Give Trophy"}
+                    style={{ background: ex.hasTrophy ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.05)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: ex.hasTrophy ? '#F59E0B' : 'var(--color-text-tertiary)', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill={ex.hasTrophy ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                      <path d="M4 22h16"/>
+                      <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/>
+                      <path d="M12 2a7.7 7.7 0 0 1 7.54 8H4.46A7.7 7.7 0 0 1 12 2z"/>
+                    </svg>
+                  </button>
                   <button 
-                    className="btn btn-secondary" 
+                    className="btn btn-icon" 
                     onClick={(e) => { 
                       e.stopPropagation(); 
-                      openForm(ex.id, { name: ex.name, description: ex.description || '', boothNumber: ex.boothNumber || '', details: ex.details || '' }); 
+                      openForm(ex.id, { name: ex.name, description: ex.description || '', boothNumber: ex.boothNumber || '', details: ex.details || '', hasTrophy: ex.hasTrophy }); 
                     }}
+                    title="Edit Exhibitor"
+                    style={{ background: 'rgba(246, 146, 30, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: '#F6921E', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    Edit
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/>
+                    </svg>
                   </button>
                   <button 
                     className="btn btn-icon" 
@@ -1144,6 +1195,7 @@ export default function AdminPage() {
                       e.stopPropagation();
                       deleteExhibitor(ex.id);
                     }} 
+                    title="Delete Exhibitor"
                     style={{ background: 'rgba(255, 107, 107, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--color-accent-coral)', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     ✕
@@ -1164,6 +1216,16 @@ export default function AdminPage() {
                   <div className="form-group"><label className="form-label">Description</label><textarea className="form-textarea" value={formData.description || ''} onChange={e => handleFormChange('description', e.target.value)} /></div>
                   <div className="form-group"><label className="form-label">Booth Number</label><input className="form-input" value={formData.boothNumber || ''} onChange={e => handleFormChange('boothNumber', e.target.value)} placeholder="e.g., A-101" /></div>
                   <div className="form-group"><label className="form-label">Details</label><textarea className="form-textarea" value={formData.details || ''} onChange={e => handleFormChange('details', e.target.value)} /></div>
+                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-4)' }}>
+                    <input 
+                      type="checkbox" 
+                      id="exhibitor-has-trophy"
+                      checked={formData.hasTrophy || false} 
+                      onChange={e => handleFormChange('hasTrophy', e.target.checked)}
+                      style={{ width: 'auto', cursor: 'pointer' }}
+                    />
+                    <label className="form-label" htmlFor="exhibitor-has-trophy" style={{ margin: 0, cursor: 'pointer' }}>🏆 Top Ranked (Trophy)</label>
+                  </div>
                   <div className="form-actions">
                     <button className="btn btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
                     <button className="btn btn-primary" onClick={saveExhibitor}>Save</button>
