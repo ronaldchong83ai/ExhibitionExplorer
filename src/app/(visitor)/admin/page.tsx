@@ -98,6 +98,12 @@ export default function AdminPage() {
   const [newVisitorEmail, setNewVisitorEmail] = useState('');
   const [collectionsLoading, setCollectionsLoading] = useState(false);
 
+  // Voucher Scan Logs states
+  const [showScanLogsModal, setShowScanLogsModal] = useState(false);
+  const [activeVoucherForScans, setActiveVoucherForScans] = useState<Voucher | null>(null);
+  const [scanLogs, setScanLogs] = useState<any[]>([]);
+  const [scanLogsLoading, setScanLogsLoading] = useState(false);
+
   // Scanner states & refs for Admin email scan popup
   const [scanning, setScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -726,6 +732,26 @@ export default function AdminPage() {
     }
   };
 
+  const openScanLogs = async (v: Voucher) => {
+    setActiveVoucherForScans(v);
+    setShowScanLogsModal(true);
+    setScanLogsLoading(true);
+    setScanLogs([]);
+    try {
+      const res = await fetchData(`/api/admin/vouchers/${v.id}/scans`);
+      if (res.success) {
+        setScanLogs(res.data || []);
+      } else {
+        alert(res.error || "Failed to load scan logs");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load scan logs");
+    } finally {
+      setScanLogsLoading(false);
+    }
+  };
+
   const executeAddVisitor = async (emailStr: string) => {
     if (!activeVoucherForCollections || !emailStr) return;
 
@@ -1196,12 +1222,15 @@ export default function AdminPage() {
             <div key={v.id} className="admin-card card">
               <div className="admin-card-header">
                 <h4>{v.title}</h4>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-secondary" onClick={() => openCollectionsManager(v)}>Manage</button>
-                  <button className="btn btn-secondary" onClick={() => { openForm(v.id, { title: v.title, description: v.description || '', details: v.details || '', displayFrom: v.displayFrom ? toLocalDatetimeString(v.displayFrom) : '', displayTo: v.displayTo ? toLocalDatetimeString(v.displayTo) : '' }, v.requiredScanIds); }}>Edit</button>
-                  <button className="btn btn-icon" onClick={() => deleteVoucher(v.id)} style={{ background: 'rgba(255, 107, 107, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--color-accent-coral)', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                    ✕
-                  </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="btn btn-secondary" onClick={() => openCollectionsManager(v)}>Manage</button>
+                    <button className="btn btn-secondary" onClick={() => { openForm(v.id, { title: v.title, description: v.description || '', details: v.details || '', displayFrom: v.displayFrom ? toLocalDatetimeString(v.displayFrom) : '', displayTo: v.displayTo ? toLocalDatetimeString(v.displayTo) : '' }, v.requiredScanIds); }}>Edit</button>
+                    <button className="btn btn-icon" onClick={() => deleteVoucher(v.id)} style={{ background: 'rgba(255, 107, 107, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--color-accent-coral)', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      ✕
+                    </button>
+                  </div>
+                  <button className="btn btn-secondary" style={{ width: '100%', fontSize: 'var(--font-size-xs)', padding: '4px 8px' }} onClick={() => openScanLogs(v)}>Scan Logs</button>
                 </div>
               </div>
               <p className="admin-card-desc">{v.description}</p>
@@ -1265,6 +1294,54 @@ export default function AdminPage() {
 
                   <div className="form-actions" style={{ marginTop: 'var(--space-4)' }}>
                     <button className="btn btn-secondary" type="button" onClick={() => setShowCollectionsModal(false)}>Close</button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {showScanLogsModal && activeVoucherForScans && (
+            <>
+              <div className="modal-overlay" onClick={() => setShowScanLogsModal(false)} />
+              <div className="modal-content">
+                <div className="modal-handle" />
+                <div className="admin-form animate-scale-in" style={{ marginTop: 0 }}>
+                  <h4>Scan Logs: {activeVoucherForScans.title}</h4>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '350px', overflowY: 'auto' }}>
+                    <label className="form-label" style={{ fontWeight: 600 }}>Scans ({scanLogs.length})</label>
+                    {scanLogsLoading && scanLogs.length === 0 ? (
+                      <p style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-xs)', textAlign: 'center', margin: '12px 0' }}>Loading...</p>
+                    ) : scanLogs.length === 0 ? (
+                      <p style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-xs)', textAlign: 'center', margin: '12px 0', fontStyle: 'italic' }}>No scans recorded for this voucher yet.</p>
+                    ) : (
+                      <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-xs)', textAlign: 'left', minWidth: '400px' }}>
+                          <thead>
+                            <tr style={{ background: 'var(--color-bg-input)', borderBottom: '1px solid var(--color-border)' }}>
+                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Email</th>
+                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Scanned ID</th>
+                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Date & Time</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {scanLogs.map(log => (
+                              <tr key={log.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                <td style={{ padding: '8px 12px', color: 'var(--color-text-primary)' }}>{log.email}</td>
+                                <td style={{ padding: '8px 12px', color: 'var(--color-text-primary)' }}>
+                                  <span className="badge badge-blue">{log.scanId}</span>
+                                </td>
+                                <td style={{ padding: '8px 12px', color: 'var(--color-text-secondary)' }}>{formatDatetimeDDMMMYYYY(log.scannedAt)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-actions" style={{ marginTop: 'var(--space-4)' }}>
+                    <button className="btn btn-secondary btn-full" type="button" onClick={() => setShowScanLogsModal(false)}>Close</button>
                   </div>
                 </div>
               </div>
