@@ -761,6 +761,7 @@ export default function AdminPage() {
         email: emailStr,
       });
       if (res.success && res.data) {
+        alert("Redeem successful!");
         setCollectedVisitors(prev => {
           if (prev.some(v => v.userId === res.data.userId)) return prev;
           const updated = [...prev, res.data];
@@ -1369,27 +1370,19 @@ export default function AdminPage() {
                     ) : scanLogs.length === 0 ? (
                       <p style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-xs)', textAlign: 'center', margin: '12px 0', fontStyle: 'italic' }}>No scans recorded for this voucher yet.</p>
                     ) : (
-                      <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--font-size-xs)', textAlign: 'left', minWidth: '400px' }}>
-                          <thead>
-                            <tr style={{ background: 'var(--color-bg-input)', borderBottom: '1px solid var(--color-border)' }}>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Email</th>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Scanned ID</th>
-                              <th style={{ padding: '8px 12px', fontWeight: 600 }}>Date & Time</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {scanLogs.map(log => (
-                              <tr key={log.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                                <td style={{ padding: '8px 12px', color: 'var(--color-text-primary)' }}>{log.email}</td>
-                                <td style={{ padding: '8px 12px', color: 'var(--color-text-primary)' }}>
-                                  <span className="badge badge-blue">{log.scanId}</span>
-                                </td>
-                                <td style={{ padding: '8px 12px', color: 'var(--color-text-secondary)' }}>{formatDatetimeDDMMMYYYY(log.scannedAt)}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {scanLogs.map(log => (
+                          <div key={log.id} style={{ padding: '10px 12px', background: 'var(--color-bg-input)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 'var(--font-size-sm)' }}>
+                              <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{log.email}</span>
+                              <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>{formatDatetimeDDMMMYYYY(log.scannedAt)}</span>
+                            </div>
+                            <div style={{ wordBreak: 'break-all', fontSize: 'var(--font-size-xs)' }}>
+                              <span style={{ color: 'var(--color-text-tertiary)', marginRight: '6px', fontWeight: 600 }}>Scanned ID:</span>
+                              <span className="badge badge-blue" style={{ display: 'inline-block', wordBreak: 'break-all', whiteSpace: 'normal', height: 'auto', padding: '4px 8px', lineHeight: '1.4' }}>{log.scanId}</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>

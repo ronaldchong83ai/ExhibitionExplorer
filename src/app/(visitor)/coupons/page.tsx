@@ -217,6 +217,7 @@ export default function CouponsPage() {
       }).then(r => r.json());
 
       if (res.success && res.data) {
+        alert("Redeem successful!");
         setCollectedVisitors(prev => {
           if (prev.some(v => v.userId === res.data.userId)) return prev;
           const updated = [...prev, res.data];
