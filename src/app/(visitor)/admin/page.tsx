@@ -2447,7 +2447,7 @@ export default function AdminPage() {
                 🖼️ Available Image Weblinks
               </h4>
               <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', margin: 0, marginBottom: 'var(--space-3)' }}>
-                Upload images using the button above, then copy their links to insert them into your text content.
+                Upload images using the Upload Image button above, then copy their links to insert them into your text content via the Image URL button.
               </p>
               {aboutUsUploadedImages.length === 0 ? (
                 <div style={{ padding: 'var(--space-3)', textAlign: 'center', background: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--color-border)' }}>
