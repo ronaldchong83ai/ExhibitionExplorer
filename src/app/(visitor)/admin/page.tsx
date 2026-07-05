@@ -108,6 +108,7 @@ export default function AdminPage() {
   // About Us editor states & refs
   const [aboutUsContent, setAboutUsContent] = useState('');
   const [aboutUsLoading, setAboutUsLoading] = useState(false);
+  const [aboutUsUploadedImages, setAboutUsUploadedImages] = useState<string[]>([]);
   const editorRef = useRef<HTMLDivElement>(null);
 
   // Scanner states & refs for Admin email scan popup
@@ -375,6 +376,22 @@ export default function AdminPage() {
       setLoading(false);
     };
     loadAboutUs();
+  }, [section, selectedExhibition, user]);
+
+  // Fetch About Us uploaded images list
+  useEffect(() => {
+    if (!user || section !== 'about-us' || !selectedExhibition) return;
+    const loadUploadedImages = async () => {
+      try {
+        const d = await fetchData(`/api/admin/about-us/upload?exhibitionId=${selectedExhibition}`);
+        if (d.success && d.data) {
+          setAboutUsUploadedImages(d.data);
+        }
+      } catch (err) {
+        console.error("Failed to load uploaded images:", err);
+      }
+    };
+    loadUploadedImages();
   }, [section, selectedExhibition, user]);
 
   // Fetch Facilities
@@ -2355,6 +2372,51 @@ export default function AdminPage() {
                 >
                   🔗 Image URL
                 </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <label 
+                    className="btn btn-secondary" 
+                    style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0 }}
+                  >
+                    📁 Upload Image
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: 'none' }} 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 1024 * 1024) {
+                          alert("Image is too large. Please select an image under 1MB.");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = async (event) => {
+                          const base64 = event.target?.result as string;
+                          if (!base64) return;
+                          
+                          try {
+                            const res = await postData('/api/admin/about-us/upload', {
+                              exhibitionId: selectedExhibition,
+                              image: base64
+                            });
+                            if (res.success && res.url) {
+                              setAboutUsUploadedImages(prev => [res.url, ...prev]);
+                              alert("Upload successful! You can copy the web link from the list below.");
+                            } else {
+                              alert(res.error || "Failed to upload image.");
+                            }
+                          } catch (err) {
+                            console.error(err);
+                            alert("Upload failed.");
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                  <span style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
+                </div>
               </div>
             </div>
 
@@ -2378,6 +2440,56 @@ export default function AdminPage() {
                 outline: 'none'
               }}
             />
+
+            {/* List of Available Image Links */}
+            <div style={{ marginTop: 'var(--space-4)', background: 'var(--color-bg-secondary)', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+              <h4 style={{ margin: 0, marginBottom: 'var(--space-2)', fontSize: 'var(--font-size-base)', color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                🖼️ Available Image Weblinks
+              </h4>
+              <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', margin: 0, marginBottom: 'var(--space-3)' }}>
+                Upload images using the button above, then copy their links to insert them into your text content.
+              </p>
+              {aboutUsUploadedImages.length === 0 ? (
+                <div style={{ padding: 'var(--space-3)', textAlign: 'center', background: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--color-border)' }}>
+                  <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-tertiary)' }}>No uploaded images yet</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {aboutUsUploadedImages.map((url, idx) => {
+                    const fullUrl = typeof window !== 'undefined' ? `${window.location.origin}${url}` : url;
+                    return (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--color-bg-tertiary)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
+                        <img 
+                          src={url} 
+                          alt="" 
+                          style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', background: 'var(--color-bg-input)' }} 
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <input 
+                            className="form-input" 
+                            readOnly 
+                            value={fullUrl} 
+                            style={{ margin: 0, height: '28px', fontSize: '11px', padding: '4px 8px', textOverflow: 'ellipsis', background: 'var(--color-bg-input)' }} 
+                            onClick={(e) => (e.target as HTMLInputElement).select()}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ padding: '4px 12px', fontSize: 'var(--font-size-xs)', height: '28px', minWidth: '80px' }}
+                          onClick={() => {
+                            navigator.clipboard.writeText(fullUrl);
+                            alert("Weblink copied to clipboard!");
+                          }}
+                        >
+                          Copy Link
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* Save Action */}
             <div style={{ marginTop: 'var(--space-4)', display: 'flex', justifyContent: 'flex-end' }}>
