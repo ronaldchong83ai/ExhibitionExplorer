@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    const uploadDir = path.join(process.cwd(), 'uploads');
     if (!fs.existsSync(uploadDir)) {
       return Response.json({ success: true, data: [] });
     }
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const prefix = `about_us_${exhibitionId}_`;
     const filteredUrls = files
       .filter(f => f.startsWith(prefix))
-      .map(f => `/uploads/${f}`);
+      .map(f => `/api/about-us/image?filename=${f}`);
 
     return Response.json({ success: true, data: filteredUrls });
   } catch (error: any) {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ success: false, error: 'Image exceeds 1MB limit' }, { status: 400 });
     }
 
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    const uploadDir = path.join(process.cwd(), 'uploads');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     fs.writeFileSync(filePath, dataBuffer);
 
-    return Response.json({ success: true, url: `/uploads/${filename}` });
+    return Response.json({ success: true, url: `/api/about-us/image?filename=${filename}` });
   } catch (error: any) {
     console.error('Upload image error:', error);
     return Response.json({ success: false, error: error.message || 'Upload failed' }, { status: 500 });
