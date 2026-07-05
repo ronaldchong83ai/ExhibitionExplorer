@@ -1308,7 +1308,7 @@ export default function AdminPage() {
                       disabled={collectionsLoading}
                     />
                     <button className="btn btn-primary" type="submit" disabled={collectionsLoading}>
-                      Add
+                      Add/Scan
                     </button>
                   </form>
 
