@@ -1222,15 +1222,54 @@ export default function AdminPage() {
             <div key={v.id} className="admin-card card">
               <div className="admin-card-header">
                 <h4>{v.title}</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-secondary" onClick={() => openCollectionsManager(v)}>Manage</button>
-                    <button className="btn btn-secondary" onClick={() => { openForm(v.id, { title: v.title, description: v.description || '', details: v.details || '', displayFrom: v.displayFrom ? toLocalDatetimeString(v.displayFrom) : '', displayTo: v.displayTo ? toLocalDatetimeString(v.displayTo) : '' }, v.requiredScanIds); }}>Edit</button>
-                    <button className="btn btn-icon" onClick={() => deleteVoucher(v.id)} style={{ background: 'rgba(255, 107, 107, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--color-accent-coral)', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                      ✕
-                    </button>
-                  </div>
-                  <button className="btn btn-secondary" style={{ width: '100%', fontSize: 'var(--font-size-xs)', padding: '4px 8px' }} onClick={() => openScanLogs(v)}>Scan Logs</button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    className="btn btn-icon"
+                    onClick={() => openCollectionsManager(v)}
+                    title="Manage Collections"
+                    style={{ background: 'rgba(59, 130, 246, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: '#3B82F6', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 12 20 22 4 22 4 12"/>
+                      <rect x="2" y="7" width="20" height="5"/>
+                      <line x1="12" y1="22" x2="12" y2="7"/>
+                      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+                      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                    </svg>
+                  </button>
+                  <button
+                    className="btn btn-icon"
+                    onClick={() => { openForm(v.id, { title: v.title, description: v.description || '', details: v.details || '', displayFrom: v.displayFrom ? toLocalDatetimeString(v.displayFrom) : '', displayTo: v.displayTo ? toLocalDatetimeString(v.displayTo) : '' }, v.requiredScanIds); }}
+                    title="Edit Voucher"
+                    style={{ background: 'rgba(246, 146, 30, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: '#F6921E', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/>
+                    </svg>
+                  </button>
+                  <button
+                    className="btn btn-icon"
+                    onClick={() => openScanLogs(v)}
+                    title="Scan Logs"
+                    style={{ background: 'rgba(139, 92, 246, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: '#8B5CF6', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                  </button>
+                  <button
+                    className="btn btn-icon"
+                    onClick={() => deleteVoucher(v.id)}
+                    title="Delete Voucher"
+                    style={{ background: 'rgba(255, 107, 107, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--color-accent-coral)', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    ✕
+                  </button>
                 </div>
               </div>
               <p className="admin-card-desc">{v.description}</p>
