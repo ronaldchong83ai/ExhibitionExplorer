@@ -4,7 +4,7 @@ import { Pool } from 'pg';
 import type {
   User, Exhibition, HomePageInfo, StageEvent, Exhibitor,
   Product, PurchaseConversion, VenueMap, Voucher, VoucherScan, VoucherCollection,
-  Favourite, ActionLog, Notification, NotificationSetting, PushSubscription,
+  Favourite, ActionLog, Notification, NotificationSetting, PushSubscription, AboutUs,
   UserRole, AuthProvider, HomeInfoType, FavouriteType, ActionType
 } from '@/types';
 
@@ -25,6 +25,7 @@ export interface DataStore {
   notifications: Notification[];
   notificationSettings: NotificationSetting[];
   pushSubscriptions: PushSubscription[];
+  aboutUs: AboutUs[];
 }
 
 let prisma: PrismaClient;
@@ -50,7 +51,7 @@ export async function getData(): Promise<DataStore> {
     users, exhibitions, homePageInfos, stageEvents, exhibitors,
     products, purchaseConversions, venueMaps, vouchers, voucherScans,
     favourites, actionLogs, notifications, notificationSettings, pushSubscriptions,
-    voucherCollections
+    voucherCollections, aboutUs
   ] = await Promise.all([
     prisma.user.findMany(),
     prisma.exhibition.findMany(),
@@ -68,6 +69,7 @@ export async function getData(): Promise<DataStore> {
     prisma.notificationSetting.findMany(),
     prisma.pushSubscription.findMany(),
     prisma.voucherCollection.findMany(),
+    prisma.aboutUs.findMany(),
   ]);
 
   return {
@@ -129,6 +131,10 @@ export async function getData(): Promise<DataStore> {
     voucherCollections: voucherCollections.map(v => ({
       ...v,
       collectedAt: v.collectedAt.toISOString()
+    })),
+    aboutUs: aboutUs.map(a => ({
+      ...a,
+      updatedAt: a.updatedAt.toISOString()
     })),
     favourites: favourites.map(f => ({
       ...f,
@@ -597,8 +603,30 @@ export async function saveData(data: DataStore): Promise<void> {
     })
   ]);
 
+  // 17. AboutUs
+  if (data.aboutUs) {
+    const aboutUsIds = data.aboutUs.map(a => a.id);
+    await Promise.all([
+      ...data.aboutUs.map(a => prisma.aboutUs.upsert({
+        where: { id: a.id },
+        update: {
+          exhibitionId: a.exhibitionId,
+          content: a.content
+        },
+        create: {
+          id: a.id,
+          exhibitionId: a.exhibitionId,
+          content: a.content
+        }
+      })),
+      prisma.aboutUs.deleteMany({
+        where: { id: { notIn: aboutUsIds } }
+      })
+    ]);
+  }
+
   // Invalidate all caches on save/write mutations
-  const keys = ['home', 'stages', 'exhibitors', 'vouchers', 'favourites', 'notifications', 'users'];
+  const keys = ['home', 'stages', 'exhibitors', 'vouchers', 'favourites', 'notifications', 'users', 'about-us'];
   await Promise.all(keys.map(k => invalidateCache(k)));
 }
 

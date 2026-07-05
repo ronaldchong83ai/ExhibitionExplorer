@@ -193,3 +193,10 @@ export interface FacilityBooking {
   bookingTime: string;
   createdAt: string;
 }
+
+export interface AboutUs {
+  id: string;
+  exhibitionId: string;
+  content: string;
+  updatedAt: string;
+}

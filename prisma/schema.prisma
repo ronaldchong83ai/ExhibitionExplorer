@@ -198,3 +198,10 @@ model FacilityBooking {
   createdAt   DateTime @default(now())
 }
 
+model AboutUs {
+  id           String   @id @default(uuid())
+  exhibitionId String   @unique
+  content      String
+  updatedAt    DateTime @updatedAt
+}
+

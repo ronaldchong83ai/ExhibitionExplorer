@@ -23,6 +23,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/coupons', label: 'Coupon/Gift', icon: '🎫' },
   { href: '/feedback', label: 'Feedback', icon: '💬' },
   { href: '/my-page', label: 'My Page', icon: '👤' },
+  { href: '/about-us', label: 'About Us', icon: 'ℹ️' },
   { href: '/exhibitor', label: 'Exhibitor Page', icon: '💼', exhibitorOrAdminOnly: true },
   { href: '/admin', label: 'Admin Page', icon: '⚙️', adminOnly: true },
 ];

@@ -37,7 +37,8 @@ type AdminSection =
   | 'vouchers'
   | 'analytics'
   | 'roles'
-  | 'feedback';
+  | 'feedback'
+  | 'about-us';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -103,6 +104,11 @@ export default function AdminPage() {
   const [activeVoucherForScans, setActiveVoucherForScans] = useState<Voucher | null>(null);
   const [scanLogs, setScanLogs] = useState<any[]>([]);
   const [scanLogsLoading, setScanLogsLoading] = useState(false);
+
+  // About Us editor states & refs
+  const [aboutUsContent, setAboutUsContent] = useState('');
+  const [aboutUsLoading, setAboutUsLoading] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   // Scanner states & refs for Admin email scan popup
   const [scanning, setScanning] = useState(false);
@@ -353,6 +359,22 @@ export default function AdminPage() {
       setLoading(false);
     };
     loadFeedbacks();
+  }, [section, selectedExhibition, user]);
+
+  // Fetch About Us content
+  useEffect(() => {
+    if (!user || section !== 'about-us' || !selectedExhibition) return;
+    const loadAboutUs = async () => {
+      setLoading(true);
+      const d = await fetchData(`/api/about-us?exhibitionId=${selectedExhibition}`);
+      if (d.success && d.data) {
+        setAboutUsContent(d.data.content || '');
+      } else {
+        setAboutUsContent('');
+      }
+      setLoading(false);
+    };
+    loadAboutUs();
   }, [section, selectedExhibition, user]);
 
   // Fetch Facilities
@@ -780,6 +802,39 @@ export default function AdminPage() {
     }
   };
 
+  // Load content into editor on mount/load/switch
+  useEffect(() => {
+    if (editorRef.current && section === 'about-us') {
+      editorRef.current.innerHTML = aboutUsContent;
+    }
+  }, [section, loading, aboutUsContent]);
+
+  const saveAboutUs = async () => {
+    if (!selectedExhibition) return;
+    const finalContent = editorRef.current ? editorRef.current.innerHTML : '';
+    setAboutUsLoading(true);
+    try {
+      const res = await postData('/api/admin/about-us', {
+        exhibitionId: selectedExhibition,
+        content: finalContent,
+      });
+      if (res.success) {
+        alert("About Us content saved successfully!");
+      } else {
+        alert(res.error || "Failed to save About Us content");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save content");
+    } finally {
+      setAboutUsLoading(false);
+    }
+  };
+
+  const applyFormat = (command: string, value: string = '') => {
+    document.execCommand(command, false, value);
+  };
+
   const addVisitorToCollections = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeVoucherForCollections) return;
@@ -831,6 +886,7 @@ export default function AdminPage() {
     { key: 'vouchers' as const, label: '🎫 Vouchers', needsExhibition: true },
     { key: 'analytics' as const, label: '📊 Analytics', needsExhibition: true },
     { key: 'feedback' as const, label: '💬 Feedback', needsExhibition: true },
+    { key: 'about-us' as const, label: 'ℹ️ About Us', needsExhibition: true },
     { key: 'roles' as const, label: '👤 Roles', needsExhibition: false },
   ];
 
@@ -2158,7 +2214,138 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+      {section === 'about-us' && selectedExhibition && (
+        <div className="admin-section animate-fade-in">
+          <div className="section-header">
+            <h3 className="section-title">ℹ️ Edit About Us Page</h3>
+          </div>
+          <div className="card" style={{ padding: 'var(--space-4)' }}>
+            {/* Rich Text Toolbar */}
+            <div className="editor-toolbar" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '8px', background: 'var(--color-bg-input)', border: '1px solid var(--color-border)', borderBottom: 'none', borderTopLeftRadius: 'var(--radius-md)', borderTopRightRadius: 'var(--radius-md)', alignItems: 'center' }}>
+              
+              {/* Font Family Select */}
+              <select 
+                className="form-input" 
+                style={{ width: 'auto', padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px', cursor: 'pointer' }}
+                onChange={(e) => applyFormat('fontName', e.target.value)}
+                defaultValue="Arial"
+              >
+                <option value="Arial">Arial</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Outfit">Outfit</option>
+                <option value="Inter">Inter</option>
+              </select>
 
+              {/* Font Size Select */}
+              <select 
+                className="form-input" 
+                style={{ width: 'auto', padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px', cursor: 'pointer' }}
+                onChange={(e) => applyFormat('fontSize', e.target.value)}
+                defaultValue="3"
+              >
+                <option value="1">Small</option>
+                <option value="3">Normal</option>
+                <option value="5">Large</option>
+                <option value="6">Extra Large</option>
+              </select>
+
+              {/* Font Color Select */}
+              <select 
+                className="form-input" 
+                style={{ width: 'auto', padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px', cursor: 'pointer' }}
+                onChange={(e) => applyFormat('foreColor', e.target.value)}
+                defaultValue="#FFFFFF"
+              >
+                <option value="#FFFFFF">White</option>
+                <option value="#F6921E">Orange</option>
+                <option value="#3B82F6">Blue</option>
+                <option value="#10B981">Green</option>
+                <option value="#FF6B6B">Coral</option>
+                <option value="#000000">Black</option>
+              </select>
+
+              {/* Bold, Italic, Underline Toggles */}
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', minWidth: '32px', height: '32px', fontWeight: 'bold' }} onClick={() => applyFormat('bold')}>B</button>
+                <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', minWidth: '32px', height: '32px', fontStyle: 'italic' }} onClick={() => applyFormat('italic')}>I</button>
+                <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', minWidth: '32px', height: '32px', textDecoration: 'underline' }} onClick={() => applyFormat('underline')}>U</button>
+              </div>
+
+              {/* Insert Image Actions */}
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: 'auto' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px' }} 
+                  onClick={() => {
+                    const url = prompt("Enter image URL:");
+                    if (url) applyFormat('insertImage', url);
+                  }}
+                >
+                  🔗 Image URL
+                </button>
+
+                <label 
+                  className="btn btn-secondary" 
+                  style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', margin: 0 }}
+                >
+                  📁 Upload Image
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    style={{ display: 'none' }} 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const base64 = event.target?.result as string;
+                        if (base64) applyFormat('insertImage', base64);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Editable Content Area */}
+            <div 
+              ref={editorRef}
+              contentEditable
+              style={{
+                background: 'var(--color-bg-input)',
+                border: '1px solid var(--color-border)',
+                borderBottomLeftRadius: 'var(--radius-md)',
+                borderBottomRightRadius: 'var(--radius-md)',
+                padding: '16px',
+                minHeight: '300px',
+                maxHeight: '500px',
+                overflowY: 'auto',
+                color: 'var(--color-text-primary)',
+                fontSize: 'var(--font-size-base)',
+                lineHeight: 1.7,
+                textAlign: 'left',
+                outline: 'none'
+              }}
+            />
+
+            {/* Save Action */}
+            <div style={{ marginTop: 'var(--space-4)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                className="btn btn-primary" 
+                onClick={saveAboutUs}
+                disabled={aboutUsLoading}
+                style={{ padding: '8px 24px' }}
+              >
+                {aboutUsLoading ? 'Saving...' : 'Save About Us'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <style jsx>{`
         .admin-nav {
           display: flex;
