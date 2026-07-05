@@ -2518,66 +2518,8 @@ export default function AdminPage() {
                 <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', minWidth: '32px', height: '32px', textDecoration: 'underline' }} onClick={() => applyFormat('underline')}>U</button>
               </div>
 
-              {/* Table Functions */}
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '2px 6px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  style={{ padding: '4px 8px', fontSize: 'var(--font-size-xs)', height: '32px' }} 
-                  onClick={insertTable}
-                  title="Create Table"
-                >
-                  📅 +Table
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  style={{ padding: '4px 6px', fontSize: 'var(--font-size-xs)', height: '32px' }} 
-                  onClick={addRow}
-                  title="Add Row"
-                >
-                  ➕ Row
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  style={{ padding: '4px 6px', fontSize: 'var(--font-size-xs)', height: '32px' }} 
-                  onClick={addColumn}
-                  title="Add Column"
-                >
-                  ➕ Col
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  style={{ padding: '4px 6px', fontSize: 'var(--font-size-xs)', height: '32px', color: 'var(--color-accent-coral)' }} 
-                  onClick={deleteRow}
-                  title="Delete Row"
-                >
-                  ➖ Row
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  style={{ padding: '4px 6px', fontSize: 'var(--font-size-xs)', height: '32px', color: 'var(--color-accent-coral)' }} 
-                  onClick={deleteColumn}
-                  title="Delete Column"
-                >
-                  ➖ Col
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  style={{ padding: '4px 6px', fontSize: 'var(--font-size-xs)', height: '32px', color: 'var(--color-accent-coral)' }} 
-                  onClick={deleteTable}
-                  title="Delete Table"
-                >
-                  🗑️ Table
-                </button>
-              </div>
-
               {/* Insert Image Actions */}
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: 'auto' }}>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                 <button 
                   type="button" 
                   className="btn btn-secondary" 
@@ -2634,6 +2576,95 @@ export default function AdminPage() {
                   </label>
                   <span style={{ fontSize: '10px', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
                 </div>
+              </div>
+
+              {/* Table Functions */}
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '2px 6px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ width: '32px', height: '32px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} 
+                  onClick={insertTable}
+                  title="Create Table"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="9" y1="3" x2="9" y2="21"/>
+                    <line x1="15" y1="3" x2="15" y2="21"/>
+                    <line x1="3" y1="9" x2="21" y2="9"/>
+                    <line x1="3" y1="15" x2="21" y2="15"/>
+                  </svg>
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ width: '32px', height: '32px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} 
+                  onClick={addRow}
+                  title="Add Row"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <line x1="3" y1="11" x2="21" y2="11"/>
+                    <line x1="12" y1="15" x2="12" y2="19"/>
+                    <line x1="10" y1="17" x2="14" y2="17"/>
+                  </svg>
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ width: '32px', height: '32px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} 
+                  onClick={addColumn}
+                  title="Add Column"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <line x1="11" y1="3" x2="11" y2="21"/>
+                    <line x1="15" y1="12" x2="19" y2="12"/>
+                    <line x1="17" y1="10" x2="17" y2="14"/>
+                  </svg>
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ width: '32px', height: '32px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-accent-coral)' }} 
+                  onClick={deleteRow}
+                  title="Delete Row"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <line x1="3" y1="11" x2="21" y2="11"/>
+                    <line x1="10" y1="16" x2="14" y2="16"/>
+                  </svg>
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ width: '32px', height: '32px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-accent-coral)' }} 
+                  onClick={deleteColumn}
+                  title="Delete Column"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <line x1="11" y1="3" x2="11" y2="21"/>
+                    <line x1="15" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ width: '32px', height: '32px', padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-accent-coral)' }} 
+                  onClick={deleteTable}
+                  title="Delete Table"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <line x1="9" y1="3" x2="9" y2="21"/>
+                    <line x1="15" y1="3" x2="15" y2="21"/>
+                    <line x1="3" y1="9" x2="21" y2="9"/>
+                    <line x1="3" y1="15" x2="21" y2="15"/>
+                    <path d="M18 6l-12 12M6 6l12 12" stroke="var(--color-accent-coral)" strokeWidth="2.5"/>
+                  </svg>
+                </button>
               </div>
             </div>
 
