@@ -3,7 +3,7 @@
   "appName": "ExhibitionExplorer",
   "webDir": "public",
   "server": {
-    "url": "http://143.47.99.151:3003",
+    "url": "https://exhibition-explorer.duckdns.org",
     "cleartext": true
   }
 }

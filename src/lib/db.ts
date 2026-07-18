@@ -313,7 +313,7 @@ export async function saveData(data: DataStore): Promise<void> {
         details: e.details,
         allowedUserIds: e.allowedUserIds,
         createdAt: new Date(e.createdAt),
-        hasTrophy: e.hasTrophy ?? false
+        hasTrophy: typeof e.hasTrophy === 'boolean' ? (e.hasTrophy ? 'gold' : 'none') : (e.hasTrophy ?? 'none')
       },
       create: {
         id: e.id,
@@ -325,7 +325,7 @@ export async function saveData(data: DataStore): Promise<void> {
         details: e.details,
         allowedUserIds: e.allowedUserIds,
         createdAt: new Date(e.createdAt),
-        hasTrophy: e.hasTrophy ?? false
+        hasTrophy: typeof e.hasTrophy === 'boolean' ? (e.hasTrophy ? 'gold' : 'none') : (e.hasTrophy ?? 'none')
       }
     })),
     prisma.exhibitor.deleteMany({

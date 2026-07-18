@@ -107,7 +107,7 @@
     <div class="logo">🌐</div>
     <h2>ExhibitionExplorer</h2>
     <p>Enter the Exhibition Server URL or IP address to connect:</p>
-    <input type="text" id="server-url" placeholder="http://143.47.99.151:3000">
+    <input type="text" id="server-url" placeholder="https://exhibition-explorer.duckdns.org">
     <button onclick="saveAndConnect()">Connect</button>
   </div>
   
@@ -126,7 +126,7 @@
       document.getElementById('status').style.display = 'none';
       
       // Pre-populate with remote IP
-      document.getElementById('server-url').value = "http://143.47.99.151:3000";
+      document.getElementById('server-url').value = "https://exhibition-explorer.duckdns.org";
     }
     
     function saveAndConnect() {

@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Exhibitor, Exhibition } from '@/types';
 
+const getTrophyEmoji = (trophy: string | boolean | undefined | null): string => {
+  if (!trophy) return '';
+  if (trophy === 'gold' || trophy === true || trophy === 'true') return '🏆';
+  if (trophy === 'silver') return '🥈';
+  if (trophy === 'bronze') return '🥉';
+  return '';
+};
+
 export default function ExhibitorsPage() {
   const router = useRouter();
   const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
@@ -132,7 +140,7 @@ export default function ExhibitorsPage() {
                 )}
                 <div className="exhibitor-info">
                   <h3 className="exhibitor-name">
-                    {exhibitor.name} {exhibitor.hasTrophy && <span title="Featured Exhibitor" style={{ marginLeft: 4 }}>🏆</span>}
+                    {exhibitor.name} {exhibitor.hasTrophy && exhibitor.hasTrophy !== 'none' && <span title="Featured Exhibitor" style={{ marginLeft: 4 }}>{getTrophyEmoji(exhibitor.hasTrophy)}</span>}
                   </h3>
                   <span className="badge badge-green">Booth {exhibitor.boothNumber}</span>
                 </div>

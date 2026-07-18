@@ -20,10 +20,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const getTrophyPriority = (trophy: string | undefined | null) => {
+    if (trophy === 'gold') return 3;
+    if (trophy === 'silver') return 2;
+    if (trophy === 'bronze') return 1;
+    return 0;
+  };
+
   exhibitors.sort((a, b) => {
-    const aTrophy = a.hasTrophy ? 1 : 0;
-    const bTrophy = b.hasTrophy ? 1 : 0;
-    if (aTrophy !== bTrophy) return bTrophy - aTrophy;
+    const aScore = getTrophyPriority(a.hasTrophy);
+    const bScore = getTrophyPriority(b.hasTrophy);
+    if (aScore !== bScore) return bScore - aScore;
     return a.boothNumber.localeCompare(b.boothNumber);
   });
 

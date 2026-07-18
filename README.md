@@ -1,5 +1,21 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment Switching
+
+To easily switch configurations across `.env`, the Capacitor mobile configuration (`capacitor.config.json`), and the connection setup view (`public/index.html`) for different targets, use the interactive environment switcher script:
+
+```bash
+python switch_env.py
+```
+
+Or pass a specific environment as a parameter:
+
+```bash
+python switch_env.py local
+python switch_env.py staging
+python switch_env.py production
+```
+
 ## Getting Started
 
 First, run the development server:

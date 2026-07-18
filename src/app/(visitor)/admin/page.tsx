@@ -719,19 +719,71 @@ export default function AdminPage() {
     }
   };
 
+  const getTrophyPriority = (trophy: string | boolean | undefined | null): number => {
+    if (trophy === 'gold' || trophy === true || trophy === 'true') return 3;
+    if (trophy === 'silver') return 2;
+    if (trophy === 'bronze') return 1;
+    return 0;
+  };
+
+  const getNextTrophy = (current: string | boolean | undefined | null): string => {
+    if (current === 'bronze') return 'silver';
+    if (current === 'silver') return 'gold';
+    if (current === 'gold') return 'none';
+    return 'bronze';
+  };
+
+  const getTrophyEmoji = (trophy: string | boolean | undefined | null): string => {
+    if (!trophy) return '';
+    if (trophy === 'gold' || trophy === true || trophy === 'true') return '🏆';
+    if (trophy === 'silver') return '🥈';
+    if (trophy === 'bronze') return '🥉';
+    return '';
+  };
+
+  const getTrophyButtonStyle = (trophy: string | boolean | undefined | null) => {
+    if (trophy === 'gold' || trophy === true || trophy === 'true') {
+      return {
+        color: '#F59E0B',
+        background: 'rgba(245, 158, 11, 0.15)',
+        title: 'Gold Trophy'
+      };
+    }
+    if (trophy === 'silver') {
+      return {
+        color: '#94A3B8',
+        background: 'rgba(148, 163, 184, 0.15)',
+        title: 'Silver Trophy'
+      };
+    }
+    if (trophy === 'bronze') {
+      return {
+        color: '#B45309',
+        background: 'rgba(180, 83, 9, 0.15)',
+        title: 'Bronze Trophy'
+      };
+    }
+    return {
+      color: 'var(--color-text-tertiary)',
+      background: 'rgba(255, 255, 255, 0.05)',
+      title: 'Give Trophy'
+    };
+  };
+
   const toggleExhibitorTrophy = async (ex: Exhibitor) => {
     try {
+      const nextTrophy = getNextTrophy(ex.hasTrophy);
       const res = await putData('/api/admin/exhibitors', {
         id: ex.id,
-        hasTrophy: !ex.hasTrophy
+        hasTrophy: nextTrophy
       });
       if (res.success) {
         setExhibitors(prev => {
-          const updated = prev.map(item => item.id === ex.id ? { ...item, hasTrophy: !ex.hasTrophy } : item);
+          const updated = prev.map(item => item.id === ex.id ? { ...item, hasTrophy: nextTrophy } : item);
           updated.sort((a, b) => {
-            const aTrophy = a.hasTrophy ? 1 : 0;
-            const bTrophy = b.hasTrophy ? 1 : 0;
-            if (aTrophy !== bTrophy) return bTrophy - aTrophy;
+            const aScore = getTrophyPriority(a.hasTrophy);
+            const bScore = getTrophyPriority(b.hasTrophy);
+            if (aScore !== bScore) return bScore - aScore;
             return a.boothNumber.localeCompare(b.boothNumber);
           });
           return updated;
@@ -1330,7 +1382,7 @@ export default function AdminPage() {
             >
               <div className="admin-card-header">
                 <h4>
-                  {ex.name} {ex.hasTrophy && <span style={{ marginLeft: 4 }} title="Featured (Trophy)">🏆</span>}
+                  {ex.name} {ex.hasTrophy && ex.hasTrophy !== 'none' && <span style={{ marginLeft: 4 }} title="Featured (Trophy)">{getTrophyEmoji(ex.hasTrophy)}</span>}
                   <span className="badge badge-green" style={{ marginLeft: 8 }}>Booth {ex.boothNumber}</span>
                 </h4>
                 <div style={{ display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
@@ -1340,10 +1392,10 @@ export default function AdminPage() {
                       e.stopPropagation();
                       toggleExhibitorTrophy(ex);
                     }}
-                    title={ex.hasTrophy ? "Remove Trophy" : "Give Trophy"}
-                    style={{ background: ex.hasTrophy ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.05)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: ex.hasTrophy ? '#F59E0B' : 'var(--color-text-tertiary)', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)' }}
+                    title={getTrophyButtonStyle(ex.hasTrophy).title}
+                    style={{ background: getTrophyButtonStyle(ex.hasTrophy).background, border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: getTrophyButtonStyle(ex.hasTrophy).color, width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'all var(--transition-fast)' }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill={ex.hasTrophy ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill={ex.hasTrophy && ex.hasTrophy !== 'none' ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
                       <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
                       <path d="M4 22h16"/>
@@ -1392,15 +1444,20 @@ export default function AdminPage() {
                   <div className="form-group"><label className="form-label">Description</label><textarea className="form-textarea" value={formData.description || ''} onChange={e => handleFormChange('description', e.target.value)} /></div>
                   <div className="form-group"><label className="form-label">Booth Number</label><input className="form-input" value={formData.boothNumber || ''} onChange={e => handleFormChange('boothNumber', e.target.value)} placeholder="e.g., A-101" /></div>
                   <div className="form-group"><label className="form-label">Details</label><textarea className="form-textarea" value={formData.details || ''} onChange={e => handleFormChange('details', e.target.value)} /></div>
-                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-4)' }}>
-                    <input 
-                      type="checkbox" 
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="exhibitor-has-trophy">Trophy Rank</label>
+                    <select 
+                      className="form-input" 
                       id="exhibitor-has-trophy"
-                      checked={formData.hasTrophy || false} 
-                      onChange={e => handleFormChange('hasTrophy', e.target.checked)}
-                      style={{ width: 'auto', cursor: 'pointer' }}
-                    />
-                    <label className="form-label" htmlFor="exhibitor-has-trophy" style={{ margin: 0, cursor: 'pointer' }}>🏆 Top Ranked (Trophy)</label>
+                      value={typeof formData.hasTrophy === 'boolean' ? (formData.hasTrophy ? 'gold' : 'none') : (formData.hasTrophy || 'none')} 
+                      onChange={e => handleFormChange('hasTrophy', e.target.value)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <option value="none">None</option>
+                      <option value="bronze">🥉 Bronze</option>
+                      <option value="silver">🥈 Silver</option>
+                      <option value="gold">🏆 Gold</option>
+                    </select>
                   </div>
                   <div className="form-actions">
                     <button className="btn btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>

@@ -4,6 +4,14 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Exhibitor, Product, PurchaseConversion } from '@/types';
 
+const getTrophyEmoji = (trophy: string | boolean | undefined | null): string => {
+  if (!trophy) return '';
+  if (trophy === 'gold' || trophy === true || trophy === 'true') return '🏆';
+  if (trophy === 'silver') return '🥈';
+  if (trophy === 'bronze') return '🥉';
+  return '';
+};
+
 export default function ExhibitorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -214,7 +222,7 @@ export default function ExhibitorDetailPage({ params }: { params: Promise<{ id: 
           </div>
         )}
         <h1 className="exhibitor-hero-name">
-          {exhibitor.name} {exhibitor.hasTrophy && <span title="Featured Exhibitor" style={{ marginLeft: 4 }}>🏆</span>}
+          {exhibitor.name} {exhibitor.hasTrophy && exhibitor.hasTrophy !== 'none' && <span title="Featured Exhibitor" style={{ marginLeft: 4 }}>{getTrophyEmoji(exhibitor.hasTrophy)}</span>}
         </h1>
         <span className="badge badge-green" style={{ marginBottom: 'var(--space-3)' }}>
           Booth {exhibitor.boothNumber}

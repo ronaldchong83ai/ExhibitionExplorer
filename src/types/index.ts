@@ -67,7 +67,7 @@ export interface Exhibitor {
   details: string;
   allowedUserIds: string[];
   createdAt: string;
-  hasTrophy?: boolean;
+  hasTrophy?: string;
 }
 
 export interface Product {
