@@ -102,3 +102,81 @@ To tail logs for troubleshooting and diagnostics, run:
 ```powershell
 ssh -i c:\Users\zhang\Downloads\RemoteServer\ssh-key-2025-09-07.key ubuntu@143.47.99.151 "pm2 logs exhibition-explorer"
 ```
+
+---
+
+## 5. iOS Code Signing and IPA Signing Configuration
+
+The current GitHub Actions workflow is set up to generate an **unsigned `.ipa`** file by bypassing the code signing requirements. This is suitable for debugging, emulator use, or sideloading (e.g., AltStore/TrollStore).
+
+If you want to distribute the app through TestFlight or the App Store, you must sign the `.ipa` file. Follow these steps to configure iOS certificates and signing in GitHub Actions:
+
+### Step 1: Prepare Your Certificates & Provisioning Profile
+1. **Export `.p12` Certificate**: Open **Keychain Access** on a Mac, find your iOS Distribution/Development Certificate, right-click, and select **Export...** to save it as a `.p12` file. Note the password used to encrypt it.
+2. **Download Provisioning Profile**: Download the matching provisioning profile (`.mobileprovision`) from your Apple Developer account portal.
+3. **Convert to Base64 (Windows/Mac)**:
+   - On Mac:
+     ```bash
+     base64 -i my-cert.p12 | pbcopy
+     base64 -i my-profile.mobileprovision | pbcopy
+     ```
+   - On Windows (PowerShell):
+     ```powershell
+     [Convert]::ToBase64String([IO.File]::ReadAllBytes("my-cert.p12")) | clip
+     [Convert]::ToBase64String([IO.File]::ReadAllBytes("my-profile.mobileprovision")) | clip
+     ```
+
+### Step 2: Configure GitHub Secrets
+In your GitHub repository, navigate to **Settings > Secrets and variables > Actions** and create the following secrets:
+- `BUILD_CERTIFICATE_BASE64`: The base64-encoded string of your `.p12` certificate.
+- `P12_PASSWORD`: The encryption password for your `.p12` file.
+- `BUILD_PROVISION_PROFILE_BASE64`: The base64-encoded string of your `.mobileprovision` file.
+- `KEYCHAIN_PASSWORD`: A random temporary password of your choice (e.g., `tempkeychainpass123`) which GitHub Actions will use to lock/unlock a temporary macOS keychain.
+
+### Step 3: Update GitHub Actions Workflow
+Uncomment or add the keychain-installation step in your `.github/workflows/deploy-ios.yml` before the archive step:
+
+```yaml
+      # Install the certificate and provisioning profile on the Mac runner
+      - name: Install Apple certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          # Create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          # Import certificate and provisioning profile from secrets
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+          # Create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Import certificate into keychain
+          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          
+          # Apply provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+```
+
+Then, configure the `Archive Xcode Project` step to allow code signing:
+```yaml
+      - name: Archive Xcode Project
+        run: |
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/App.xcarchive
+```
+

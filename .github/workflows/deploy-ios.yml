@@ -1,0 +1,52 @@
+name: Build iOS IPA
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: macos-latest # This boots up a cloud Mac for you!
+    steps:
+      - uses: actions/checkout@v4
+
+      # Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Install npm dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Sync web assets to iOS platform
+      - name: Capacitor Sync
+        run: npx cap sync ios
+
+      # 1. Archive the application with code signing disabled
+      - name: Archive Xcode Project
+        run: |
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/App.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      # 2. Package the .app into a standard .ipa payload
+      - name: Package IPA
+        run: |
+          mkdir -p build/Payload
+          cp -r build/App.xcarchive/Products/Applications/App.app build/Payload/
+          cd build
+          zip -r ExhibitionExplorer.ipa Payload
+
+      # 3. Upload the compiled .ipa artifact
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ExhibitionExplorer-iOS-ipa
+          path: build/ExhibitionExplorer.ipa
