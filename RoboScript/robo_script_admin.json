@@ -1,0 +1,49 @@
+[
+  {
+    "eventType": "VIEW_CLICKED",
+    "timestamp": 1000,
+    "elementDescriptors": [
+      {
+        "resourceId": "login-email"
+      }
+    ]
+  },
+  {
+    "eventType": "VIEW_TEXT_CHANGED",
+    "replacementText": "test.admin@exhibition.com",
+    "timestamp": 2000,
+    "elementDescriptors": [
+      {
+        "resourceId": "login-email"
+      }
+    ]
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "timestamp": 3000,
+    "elementDescriptors": [
+      {
+        "resourceId": "login-password"
+      }
+    ]
+  },
+  {
+    "eventType": "VIEW_TEXT_CHANGED",
+    "replacementText": "TestAdmin123!",
+    "timestamp": 4000,
+    "elementDescriptors": [
+      {
+        "resourceId": "login-password"
+      }
+    ]
+  },
+  {
+    "eventType": "VIEW_CLICKED",
+    "timestamp": 5000,
+    "elementDescriptors": [
+      {
+        "resourceId": "login-submit"
+      }
+    ]
+  }
+]
