@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: '', email: '', contact: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ name: '', email: '', occupation: '', citizenship: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -82,6 +82,14 @@ export default function RegisterPage() {
       setError('Please verify your email address using OTP first.');
       return;
     }
+    if (!form.occupation.trim()) {
+      setError('Occupation is required');
+      return;
+    }
+    if (!form.citizenship.trim()) {
+      setError('Citizenship is required');
+      return;
+    }
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -99,7 +107,8 @@ export default function RegisterPage() {
         body: JSON.stringify({
           name: form.name,
           email: form.email,
-          contact: form.contact,
+          occupation: form.occupation,
+          citizenship: form.citizenship,
           password: form.password,
         }),
       });
@@ -264,16 +273,34 @@ export default function RegisterPage() {
           )}
 
           <div className="form-group">
-            <label className="form-label" htmlFor="reg-contact">Contact Number</label>
+            <label className="form-label" htmlFor="reg-occupation">
+              <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>Occupation
+            </label>
             <input
-              id="reg-contact"
-              name="contact"
-              type="tel"
+              id="reg-occupation"
+              name="occupation"
+              type="text"
               className="form-input"
-              placeholder="Enter your phone number"
-              value={form.contact}
+              placeholder="Enter your occupation"
+              value={form.occupation}
               onChange={handleChange}
-              autoComplete="tel"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="reg-citizenship">
+              <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>Citizenship
+            </label>
+            <input
+              id="reg-citizenship"
+              name="citizenship"
+              type="text"
+              className="form-input"
+              placeholder="Enter your citizenship"
+              value={form.citizenship}
+              onChange={handleChange}
+              required
             />
           </div>
 
@@ -322,6 +349,8 @@ export default function RegisterPage() {
               !isOtpVerified || 
               !form.name.trim() || 
               !form.email.trim() || 
+              !form.occupation.trim() ||
+              !form.citizenship.trim() ||
               !form.password || 
               !form.confirmPassword
             }

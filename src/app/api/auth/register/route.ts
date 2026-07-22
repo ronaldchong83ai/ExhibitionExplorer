@@ -6,10 +6,10 @@ import type { User } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, contact, password } = await request.json();
+    const { name, email, password, occupation, citizenship, contact } = await request.json();
 
-    if (!name || !email || !password) {
-      return Response.json({ success: false, error: 'Name, email, and password are required' }, { status: 400 });
+    if (!name || !email || !password || !occupation || !citizenship) {
+      return Response.json({ success: false, error: 'Name, email, password, occupation, and citizenship are required' }, { status: 400 });
     }
 
     const data = await getData();
@@ -33,12 +33,14 @@ export async function POST(request: NextRequest) {
 
     const newUser: User = {
       id: generateId(),
-      name,
+      name: name.trim(),
       email: email.toLowerCase(),
-      contact: contact || '',
+      contact: contact ? contact.trim() : '',
       passwordHash: simpleHash(password),
       role: 'VISITOR',
       provider: 'CREDENTIALS',
+      occupation: occupation.trim(),
+      citizenship: citizenship.trim(),
       createdAt: new Date().toISOString(),
     };
 

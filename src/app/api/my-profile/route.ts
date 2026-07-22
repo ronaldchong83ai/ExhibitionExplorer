@@ -34,8 +34,11 @@ export async function PUT(request: NextRequest) {
   if (!name || !name.trim()) {
     return Response.json({ success: false, error: 'Name is required' }, { status: 400 });
   }
-  if (!contact || !contact.trim()) {
-    return Response.json({ success: false, error: 'Contact number is required' }, { status: 400 });
+  if (!occupation || !occupation.trim()) {
+    return Response.json({ success: false, error: 'Occupation is required' }, { status: 400 });
+  }
+  if (!citizenship || !citizenship.trim()) {
+    return Response.json({ success: false, error: 'Citizenship is required' }, { status: 400 });
   }
 
   const data = await getData();
@@ -48,11 +51,11 @@ export async function PUT(request: NextRequest) {
   const updatedUser = {
     ...data.users[userIdx],
     name: name.trim(),
-    contact: contact.trim(),
+    contact: contact ? contact.trim() : '',
     profilePic: profilePic || null,
     dob: dob || null,
-    occupation: occupation || null,
-    citizenship: citizenship || null,
+    occupation: occupation.trim(),
+    citizenship: citizenship.trim(),
   };
 
   data.users[userIdx] = updatedUser;

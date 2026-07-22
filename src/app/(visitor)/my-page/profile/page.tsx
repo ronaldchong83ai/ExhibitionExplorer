@@ -68,8 +68,8 @@ export default function ProfileDetailsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile.name?.trim() || !profile.contact?.trim()) {
-      setError("Name and contact number are required.");
+    if (!profile.name?.trim() || !profile.occupation?.trim() || !profile.citizenship?.trim()) {
+      setError("Name, occupation, and citizenship are required.");
       return;
     }
 
@@ -196,14 +196,13 @@ export default function ProfileDetailsPage() {
           </div>
 
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
-            <label className="form-label" htmlFor="profile-contact">Contact Number *</label>
+            <label className="form-label" htmlFor="profile-contact">Contact Number</label>
             <input
               id="profile-contact"
               type="text"
               className="form-input"
               value={profile.contact || ''}
               onChange={e => handleInputChange('contact', e.target.value)}
-              required
               disabled={saving}
             />
           </div>
@@ -221,25 +220,27 @@ export default function ProfileDetailsPage() {
           </div>
 
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
-            <label className="form-label" htmlFor="profile-occupation">Occupation</label>
+            <label className="form-label" htmlFor="profile-occupation">Occupation *</label>
             <input
               id="profile-occupation"
               type="text"
               className="form-input"
               value={profile.occupation || ''}
               onChange={e => handleInputChange('occupation', e.target.value)}
+              required
               disabled={saving}
             />
           </div>
 
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
-            <label className="form-label" htmlFor="profile-citizenship">Citizenship</label>
+            <label className="form-label" htmlFor="profile-citizenship">Citizenship *</label>
             <input
               id="profile-citizenship"
               type="text"
               className="form-input"
               value={profile.citizenship || ''}
               onChange={e => handleInputChange('citizenship', e.target.value)}
+              required
               disabled={saving}
             />
           </div>
