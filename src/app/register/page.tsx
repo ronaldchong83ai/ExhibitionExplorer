@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import AutoSuggestInput from '@/components/AutoSuggestInput';
+import { OCCUPATIONS, CITIZENSHIPS } from '@/lib/constants/profileOptions';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -276,14 +278,13 @@ export default function RegisterPage() {
             <label className="form-label" htmlFor="reg-occupation">
               <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>Occupation
             </label>
-            <input
+            <AutoSuggestInput
               id="reg-occupation"
               name="occupation"
-              type="text"
-              className="form-input"
-              placeholder="Enter your occupation"
+              placeholder="Select or type your occupation"
               value={form.occupation}
-              onChange={handleChange}
+              onChange={(val) => setForm(prev => ({ ...prev, occupation: val }))}
+              options={OCCUPATIONS}
               required
             />
           </div>
@@ -292,14 +293,13 @@ export default function RegisterPage() {
             <label className="form-label" htmlFor="reg-citizenship">
               <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>Citizenship
             </label>
-            <input
+            <AutoSuggestInput
               id="reg-citizenship"
               name="citizenship"
-              type="text"
-              className="form-input"
-              placeholder="Enter your citizenship"
+              placeholder="Select or type your citizenship"
               value={form.citizenship}
-              onChange={handleChange}
+              onChange={(val) => setForm(prev => ({ ...prev, citizenship: val }))}
+              options={CITIZENSHIPS}
               required
             />
           </div>

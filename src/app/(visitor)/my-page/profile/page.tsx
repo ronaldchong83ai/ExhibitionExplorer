@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User, SessionUser } from '@/types';
+import AutoSuggestInput from '@/components/AutoSuggestInput';
+import { OCCUPATIONS, CITIZENSHIPS } from '@/lib/constants/profileOptions';
 
 export default function ProfileDetailsPage() {
   const router = useRouter();
@@ -221,12 +223,12 @@ export default function ProfileDetailsPage() {
 
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
             <label className="form-label" htmlFor="profile-occupation">Occupation *</label>
-            <input
+            <AutoSuggestInput
               id="profile-occupation"
-              type="text"
-              className="form-input"
+              placeholder="Select or type your occupation"
               value={profile.occupation || ''}
-              onChange={e => handleInputChange('occupation', e.target.value)}
+              onChange={val => handleInputChange('occupation', val)}
+              options={OCCUPATIONS}
               required
               disabled={saving}
             />
@@ -234,12 +236,12 @@ export default function ProfileDetailsPage() {
 
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
             <label className="form-label" htmlFor="profile-citizenship">Citizenship *</label>
-            <input
+            <AutoSuggestInput
               id="profile-citizenship"
-              type="text"
-              className="form-input"
+              placeholder="Select or type your citizenship"
               value={profile.citizenship || ''}
-              onChange={e => handleInputChange('citizenship', e.target.value)}
+              onChange={val => handleInputChange('citizenship', val)}
+              options={CITIZENSHIPS}
               required
               disabled={saving}
             />
