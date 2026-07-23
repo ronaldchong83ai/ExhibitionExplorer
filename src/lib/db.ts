@@ -216,6 +216,7 @@ export async function saveData(data: DataStore): Promise<void> {
         eventPeriodTo: new Date(e.eventPeriodTo),
         details: e.details,
         enabled: e.enabled !== false,
+        logoUrl: e.logoUrl || null,
         createdBy: e.createdBy,
         createdAt: new Date(e.createdAt)
       },
@@ -227,6 +228,7 @@ export async function saveData(data: DataStore): Promise<void> {
         eventPeriodTo: new Date(e.eventPeriodTo),
         details: e.details,
         enabled: e.enabled !== false,
+        logoUrl: e.logoUrl || null,
         createdBy: e.createdBy,
         createdAt: new Date(e.createdAt)
       }

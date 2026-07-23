@@ -29,6 +29,7 @@ model Exhibition {
   eventPeriodTo   DateTime
   details         String
   enabled         Boolean  @default(true)
+  logoUrl         String?
   createdBy       String
   createdAt       DateTime @default(now())
 }

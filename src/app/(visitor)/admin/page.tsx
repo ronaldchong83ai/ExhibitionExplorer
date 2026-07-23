@@ -608,6 +608,21 @@ export default function AdminPage() {
     setFormScanIds(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const handleEventLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      alert("Event logo image size must be under 1MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const base64 = uploadEvent.target?.result as string;
+      handleFormChange('logoUrl', base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const saveExhibition = async () => {
     if (!formData.title || !formData.title.trim()) {
       alert("Title is required");
@@ -635,6 +650,9 @@ export default function AdminPage() {
       setShowForm(false);
       const reload = await fetchData(url);
       if (reload.success) setExhibitions(reload.data);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('exhibition-update'));
+      }
     } else {
       alert(d.error || "Failed to save exhibition");
     }
@@ -1309,11 +1327,14 @@ export default function AdminPage() {
           {exhibitions.map(ex => (
             <div key={ex.id} className="admin-card card" onClick={() => { console.log("[Admin] Exhibition card clicked:", ex.id); setSelectedExhibition(ex.id); setSection('home-info'); }}>
               <div className="admin-card-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {ex.logoUrl && (
+                    <img src={ex.logoUrl} alt={ex.title} style={{ height: '32px', maxWidth: '80px', objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--color-border)' }} />
+                  )}
                   <h4>{ex.title}</h4>
                   {ex.enabled === false && <span className="badge badge-coral" style={{ fontSize: 'var(--font-size-xs)' }}>Disabled</span>}
                 </div>
-                <button className="btn btn-secondary" onClick={e => { e.stopPropagation(); openForm(ex.id, { title: ex.title, description: ex.description, eventPeriodFrom: ex.eventPeriodFrom?.split('T')[0] || '', eventPeriodTo: ex.eventPeriodTo?.split('T')[0] || '', details: ex.details || '', enabled: String(ex.enabled !== false) }); }}>Edit</button>
+                <button className="btn btn-secondary" onClick={e => { e.stopPropagation(); openForm(ex.id, { title: ex.title, description: ex.description, eventPeriodFrom: ex.eventPeriodFrom?.split('T')[0] || '', eventPeriodTo: ex.eventPeriodTo?.split('T')[0] || '', details: ex.details || '', enabled: String(ex.enabled !== false), logoUrl: ex.logoUrl || '' }); }}>Edit</button>
               </div>
               <p className="admin-card-desc">{ex.description}</p>
               <span className="admin-card-date">{formatDateDDMMMYYYY(ex.eventPeriodFrom)} - {formatDateDDMMMYYYY(ex.eventPeriodTo)}</span>
@@ -1328,6 +1349,27 @@ export default function AdminPage() {
                   <h4>{editingId ? 'Edit' : 'Add'} Exhibition</h4>
                   <div className="form-group"><label className="form-label">Title</label><input className="form-input" value={formData.title || ''} onChange={e => handleFormChange('title', e.target.value)} /></div>
                   <div className="form-group"><label className="form-label">Description</label><textarea className="form-textarea" value={formData.description || ''} onChange={e => handleFormChange('description', e.target.value)} /></div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">Event Logo</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {formData.logoUrl ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <img src={formData.logoUrl} alt="Logo preview" style={{ height: '40px', maxWidth: '140px', objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--color-border)', padding: '2px', background: 'var(--color-bg-input)' }} />
+                          <button type="button" className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={() => handleFormChange('logoUrl', '')}>Remove Logo</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <label className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            📷 Upload Event Logo
+                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleEventLogoUpload} />
+                          </label>
+                          <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="form-group"><label className="form-label">Event Period From</label><input className="form-input" type="date" value={formData.eventPeriodFrom || ''} onChange={e => handleFormChange('eventPeriodFrom', e.target.value)} /></div>
                   <div className="form-group"><label className="form-label">Event Period To</label><input className="form-input" type="date" value={formData.eventPeriodTo || ''} onChange={e => handleFormChange('eventPeriodTo', e.target.value)} /></div>
                   <div className="form-group"><label className="form-label">Details</label><textarea className="form-textarea" value={formData.details || ''} onChange={e => handleFormChange('details', e.target.value)} /></div>

@@ -35,6 +35,23 @@ export default function VisitorLayout({ children }: { children: React.ReactNode 
   const [user, setUser] = useState<SessionUser | null>(null);
   const [profilePic, setProfilePic] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [eventLogoUrl, setEventLogoUrl] = useState<string | null>(null);
+
+  const fetchExhibitionLogo = useCallback(async () => {
+    try {
+      const savedId = typeof window !== 'undefined' ? localStorage.getItem('selectedExhibitionId') : null;
+      const url = savedId ? `/api/home?exhibitionId=${savedId}` : '/api/home';
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success && data.data?.exhibition?.logoUrl) {
+        setEventLogoUrl(data.data.exhibition.logoUrl);
+      } else {
+        setEventLogoUrl(null);
+      }
+    } catch {
+      setEventLogoUrl(null);
+    }
+  }, []);
 
   const fetchSession = useCallback(async () => {
     try {
@@ -83,9 +100,11 @@ export default function VisitorLayout({ children }: { children: React.ReactNode 
   useEffect(() => {
     fetchSession();
     fetchNotificationCount();
+    fetchExhibitionLogo();
 
-    // Listen for custom profile update events
+    // Listen for custom profile and exhibition update events
     window.addEventListener('session-update', fetchSession);
+    window.addEventListener('exhibition-update', fetchExhibitionLogo);
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js', {
@@ -98,8 +117,9 @@ export default function VisitorLayout({ children }: { children: React.ReactNode 
 
     return () => {
       window.removeEventListener('session-update', fetchSession);
+      window.removeEventListener('exhibition-update', fetchExhibitionLogo);
     };
-  }, [fetchSession, fetchNotificationCount]);
+  }, [fetchSession, fetchNotificationCount, fetchExhibitionLogo]);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -131,7 +151,11 @@ export default function VisitorLayout({ children }: { children: React.ReactNode 
           </svg>
         </button>
 
-        <h1 className="header-title">Exhibition Explorer</h1>
+        {eventLogoUrl ? (
+          <img src={eventLogoUrl} alt="Event Logo" style={{ maxHeight: '36px', maxWidth: '180px', objectFit: 'contain' }} />
+        ) : (
+          <h1 className="header-title">Exhibition Explorer</h1>
+        )}
 
         <Link href="/notifications" className="header-bell-btn" id="notifications-bell">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

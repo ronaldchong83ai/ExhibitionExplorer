@@ -29,6 +29,7 @@ export interface Exhibition {
   eventPeriodTo: string;
   details: string;
   enabled: boolean;
+  logoUrl?: string | null;
   createdBy: string;
   createdAt: string;
 }

@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
     eventPeriodTo: body.eventPeriodTo ? new Date(body.eventPeriodTo).toISOString() : '',
     details: body.details || '',
     enabled: body.enabled !== false,
+    logoUrl: body.logoUrl || null,
     createdBy: session.id,
     createdAt: new Date().toISOString(),
   };
@@ -68,6 +69,7 @@ export async function PUT(request: NextRequest) {
     eventPeriodTo: body.eventPeriodTo ? new Date(body.eventPeriodTo).toISOString() : data.exhibitions[idx].eventPeriodTo,
     details: body.details ?? data.exhibitions[idx].details,
     enabled: body.enabled ?? data.exhibitions[idx].enabled,
+    logoUrl: body.logoUrl !== undefined ? body.logoUrl : data.exhibitions[idx].logoUrl,
   };
   await saveData(data);
   return Response.json({ success: true, data: data.exhibitions[idx] });

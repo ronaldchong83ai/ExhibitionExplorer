@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [exhibitionTitle, setExhibitionTitle] = useState('Sports & Style Festival 2026 Singapore');
+  const [eventLogoUrl, setEventLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -24,8 +25,13 @@ export default function LoginPage() {
     fetch('/api/home')
       .then(res => res.json())
       .then(d => {
-        if (d.success && d.data?.exhibition?.title) {
-          setExhibitionTitle(d.data.exhibition.title);
+        if (d.success && d.data?.exhibition) {
+          if (d.data.exhibition.title) {
+            setExhibitionTitle(d.data.exhibition.title);
+          }
+          if (d.data.exhibition.logoUrl) {
+            setEventLogoUrl(d.data.exhibition.logoUrl);
+          }
         }
       })
       .catch(() => {});
@@ -82,12 +88,24 @@ export default function LoginPage() {
       <div className="auth-container animate-scale-in">
         {/* Logo Area */}
         <div className="auth-logo">
-          <div style={{ marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, lineHeight: 1.3 }}>
-              {renderStyledTitle(exhibitionTitle)}
-            </h2>
-          </div>
-          <h1 className="auth-title">Exhibition Explorer</h1>
+          {eventLogoUrl ? (
+            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+              <img
+                src={eventLogoUrl}
+                alt="Event Logo"
+                style={{ maxHeight: '90px', maxWidth: '260px', objectFit: 'contain' }}
+              />
+            </div>
+          ) : (
+            <>
+              <div style={{ marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, lineHeight: 1.3 }}>
+                  {renderStyledTitle(exhibitionTitle)}
+                </h2>
+              </div>
+              <h1 className="auth-title">Exhibition Explorer</h1>
+            </>
+          )}
         </div>
 
         {/* Login Form */}
