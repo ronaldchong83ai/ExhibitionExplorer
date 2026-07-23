@@ -104,10 +104,11 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  // 4. Visitor Registrations (Adults & Children) + Occupation & Citizenship Breakdown
+  // 4. Visitor Registrations (Adults & Children) + Occupation & Citizenship + Per-day Breakdown
   const exhibitionRegistrations = (data.exhibitionRegistrations || []).filter(r => r.exhibitionId === exhibitionId);
   const byOccupation: Record<string, number> = {};
   const byCitizenship: Record<string, number> = {};
+  const visitorsByDate: Record<string, { totalVisitors: number; totalAdults: number; totalChildren: number; totalRegistrations: number }> = {};
 
   exhibitionRegistrations.forEach(r => {
     const u = data.users.find(user => user.id === r.userId);
@@ -115,6 +116,15 @@ export async function GET(request: NextRequest) {
     const cit = u?.citizenship?.trim() || 'Unspecified';
     byOccupation[occ] = (byOccupation[occ] || 0) + 1;
     byCitizenship[cit] = (byCitizenship[cit] || 0) + 1;
+
+    const dateStr = r.createdAt ? r.createdAt.substring(0, 10) : new Date().toISOString().substring(0, 10);
+    if (!visitorsByDate[dateStr]) {
+      visitorsByDate[dateStr] = { totalVisitors: 0, totalAdults: 0, totalChildren: 0, totalRegistrations: 0 };
+    }
+    visitorsByDate[dateStr].totalAdults += r.adultsCount;
+    visitorsByDate[dateStr].totalChildren += r.childrenCount;
+    visitorsByDate[dateStr].totalVisitors += (r.adultsCount + r.childrenCount);
+    visitorsByDate[dateStr].totalRegistrations += 1;
   });
 
   const occupationBreakdown = Object.entries(byOccupation)
@@ -125,6 +135,26 @@ export async function GET(request: NextRequest) {
     .map(([citizenship, count]) => ({ citizenship, count }))
     .sort((a, b) => b.count - a.count);
 
+  const sortedVisitorDates = Object.keys(visitorsByDate).sort();
+  const visitorsPerDay = sortedVisitorDates.map(date => {
+    let label = date;
+    try {
+      const d = new Date(date);
+      if (!isNaN(d.getTime())) {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        label = `${months[d.getMonth()]} ${d.getDate()}`;
+      }
+    } catch (_) {}
+    return {
+      date: label,
+      rawDate: date,
+      totalVisitors: visitorsByDate[date].totalVisitors,
+      totalAdults: visitorsByDate[date].totalAdults,
+      totalChildren: visitorsByDate[date].totalChildren,
+      totalRegistrations: visitorsByDate[date].totalRegistrations,
+    };
+  });
+
   const registeredVisitors = {
     totalRegistrations: exhibitionRegistrations.length,
     totalAdults: exhibitionRegistrations.reduce((sum, r) => sum + r.adultsCount, 0),
@@ -132,6 +162,7 @@ export async function GET(request: NextRequest) {
     totalVisitors: exhibitionRegistrations.reduce((sum, r) => sum + r.adultsCount + r.childrenCount, 0),
     occupationBreakdown,
     citizenshipBreakdown,
+    visitorsPerDay,
   };
 
   return Response.json({

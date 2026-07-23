@@ -73,6 +73,7 @@ export default function AdminPage() {
       totalVisitors: number;
       occupationBreakdown?: Array<{ occupation: string; count: number }>;
       citizenshipBreakdown?: Array<{ citizenship: string; count: number }>;
+      visitorsPerDay?: Array<{ date: string; rawDate: string; totalVisitors: number; totalAdults: number; totalChildren: number; totalRegistrations: number }>;
     };
   } | null>(null);
   const [filterExhibitor, setFilterExhibitor] = useState('');
@@ -80,6 +81,7 @@ export default function AdminPage() {
   const [selectedMetric, setSelectedMetric] = useState<'daily' | 'exhibitor'>('daily');
   const [redemptionMetric, setRedemptionMetric] = useState<'daily' | 'total'>('total');
   const [visitorMetric, setVisitorMetric] = useState<'visitors' | 'registrations'>('visitors');
+  const [visitorPeriod, setVisitorPeriod] = useState<'whole' | 'per_day'>('whole');
   const [regBreakdownFilter, setRegBreakdownFilter] = useState<'occupation' | 'citizenship'>('occupation');
   const [selectedChart, setSelectedChart] = useState<'visitors' | 'redemption' | 'purchase'>('visitors');
   const [showBookingsModal, setShowBookingsModal] = useState(false);
@@ -2495,6 +2497,21 @@ export default function AdminPage() {
                 </select>
               </div>
 
+              {visitorMetric === 'visitors' && (
+                <div className="form-group" style={{ margin: 0, flex: 1, minWidth: '150px' }}>
+                  <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>Time Period</label>
+                  <select 
+                    className="form-input" 
+                    value={visitorPeriod} 
+                    onChange={e => setVisitorPeriod(e.target.value as 'whole' | 'per_day')}
+                    style={{ padding: '6px 12px', fontSize: '13px' }}
+                  >
+                    <option value="whole">Whole Event</option>
+                    <option value="per_day">Per Day</option>
+                  </select>
+                </div>
+              )}
+
               {visitorMetric === 'registrations' && (
                 <div className="form-group" style={{ margin: 0, flex: 1, minWidth: '150px' }}>
                   <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>Breakdown Filter</label>
@@ -2616,11 +2633,24 @@ export default function AdminPage() {
                   let items: Array<{ label: string; count: number; color: string; icon: string }> = [];
 
                   if (visitorMetric === 'visitors') {
-                    items = [
-                      { label: 'Adult Visitors', count: rv?.totalAdults ?? 0, color: '#3B82F6', icon: '👤' },
-                      { label: 'Children Visitors', count: rv?.totalChildren ?? 0, color: '#10B981', icon: '👶' },
-                      { label: 'Total Visitors', count: rv?.totalVisitors ?? 0, color: '#F59E0B', icon: '👥' },
-                    ];
+                    if (visitorPeriod === 'whole') {
+                      items = [
+                        { label: 'Adult Visitors', count: rv?.totalAdults ?? 0, color: '#3B82F6', icon: '👤' },
+                        { label: 'Children Visitors', count: rv?.totalChildren ?? 0, color: '#10B981', icon: '👶' },
+                        { label: 'Total Visitors', count: rv?.totalVisitors ?? 0, color: '#F59E0B', icon: '👥' },
+                      ];
+                    } else {
+                      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#6366F1', '#14B8A6', '#F97316'];
+                      const perDay = rv?.visitorsPerDay || [];
+                      perDay.forEach((day, idx) => {
+                        items.push({
+                          label: `${day.date} (${day.totalAdults} Adults, ${day.totalChildren} Children)`,
+                          count: day.totalVisitors,
+                          color: colors[idx % colors.length],
+                          icon: '📅'
+                        });
+                      });
+                    }
                   } else {
                     // Registration Metric
                     items = [
