@@ -104,13 +104,34 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  // 4. Visitor Registrations (Adults & Children)
+  // 4. Visitor Registrations (Adults & Children) + Occupation & Citizenship Breakdown
   const exhibitionRegistrations = (data.exhibitionRegistrations || []).filter(r => r.exhibitionId === exhibitionId);
+  const byOccupation: Record<string, number> = {};
+  const byCitizenship: Record<string, number> = {};
+
+  exhibitionRegistrations.forEach(r => {
+    const u = data.users.find(user => user.id === r.userId);
+    const occ = u?.occupation?.trim() || 'Unspecified';
+    const cit = u?.citizenship?.trim() || 'Unspecified';
+    byOccupation[occ] = (byOccupation[occ] || 0) + 1;
+    byCitizenship[cit] = (byCitizenship[cit] || 0) + 1;
+  });
+
+  const occupationBreakdown = Object.entries(byOccupation)
+    .map(([occupation, count]) => ({ occupation, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const citizenshipBreakdown = Object.entries(byCitizenship)
+    .map(([citizenship, count]) => ({ citizenship, count }))
+    .sort((a, b) => b.count - a.count);
+
   const registeredVisitors = {
     totalRegistrations: exhibitionRegistrations.length,
     totalAdults: exhibitionRegistrations.reduce((sum, r) => sum + r.adultsCount, 0),
     totalChildren: exhibitionRegistrations.reduce((sum, r) => sum + r.childrenCount, 0),
-    totalVisitors: exhibitionRegistrations.reduce((sum, r) => sum + r.adultsCount + r.childrenCount, 0)
+    totalVisitors: exhibitionRegistrations.reduce((sum, r) => sum + r.adultsCount + r.childrenCount, 0),
+    occupationBreakdown,
+    citizenshipBreakdown,
   };
 
   return Response.json({

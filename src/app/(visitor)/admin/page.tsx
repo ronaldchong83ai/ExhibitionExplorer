@@ -71,12 +71,16 @@ export default function AdminPage() {
       totalAdults: number;
       totalChildren: number;
       totalVisitors: number;
+      occupationBreakdown?: Array<{ occupation: string; count: number }>;
+      citizenshipBreakdown?: Array<{ citizenship: string; count: number }>;
     };
   } | null>(null);
   const [filterExhibitor, setFilterExhibitor] = useState('');
   const [filterVoucher, setFilterVoucher] = useState('');
   const [selectedMetric, setSelectedMetric] = useState<'daily' | 'exhibitor'>('daily');
   const [redemptionMetric, setRedemptionMetric] = useState<'daily' | 'total'>('total');
+  const [visitorMetric, setVisitorMetric] = useState<'visitors' | 'registrations'>('visitors');
+  const [regBreakdownFilter, setRegBreakdownFilter] = useState<'occupation' | 'citizenship'>('occupation');
   const [selectedChart, setSelectedChart] = useState<'visitors' | 'redemption' | 'purchase'>('visitors');
   const [showBookingsModal, setShowBookingsModal] = useState(false);
   const [activeFacilityForBookings, setActiveFacilityForBookings] = useState<any>(null);
@@ -2475,6 +2479,39 @@ export default function AdminPage() {
             </select>
           </div>
 
+          {/* Conditional Filters (Only for Event Registered Visitors Chart) */}
+          {selectedChart === 'visitors' && (
+            <div className="analytics-filters card" style={{ padding: '16px', marginBottom: '24px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className="form-group" style={{ margin: 0, flex: 1, minWidth: '150px' }}>
+                <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>Metrics</label>
+                <select 
+                  className="form-input" 
+                  value={visitorMetric} 
+                  onChange={e => setVisitorMetric(e.target.value as 'visitors' | 'registrations')}
+                  style={{ padding: '6px 12px', fontSize: '13px' }}
+                >
+                  <option value="visitors">Visitors</option>
+                  <option value="registrations">Registrations</option>
+                </select>
+              </div>
+
+              {visitorMetric === 'registrations' && (
+                <div className="form-group" style={{ margin: 0, flex: 1, minWidth: '150px' }}>
+                  <label className="form-label" style={{ fontSize: '11px', marginBottom: '4px' }}>Breakdown Filter</label>
+                  <select 
+                    className="form-input" 
+                    value={regBreakdownFilter} 
+                    onChange={e => setRegBreakdownFilter(e.target.value as 'occupation' | 'citizenship')}
+                    style={{ padding: '6px 12px', fontSize: '13px' }}
+                  >
+                    <option value="occupation">Occupation</option>
+                    <option value="citizenship">Citizenship</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Conditional Filters (Only for Redemption Chart) */}
           {selectedChart === 'redemption' && (
             <div className="analytics-filters card" style={{ padding: '16px', marginBottom: '24px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -2569,17 +2606,52 @@ export default function AdminPage() {
                   🎟️ Event Registered Visitors
                 </h4>
                 <p className="admin-card-desc" style={{ marginBottom: '24px' }}>
-                  Registered visitor count breakdown with horizontal bar metrics
+                  {visitorMetric === 'visitors'
+                    ? 'Visitors count breakdown (Adults, Children, Total)'
+                    : `Registration metrics & breakdown by ${regBreakdownFilter === 'occupation' ? 'Occupation' : 'Citizenship'}`}
                 </p>
 
                 {(() => {
                   const rv = analyticsData?.registeredVisitors;
-                  const items = [
-                    { label: 'Adult Visitors', count: rv?.totalAdults ?? 0, color: '#3B82F6', icon: '👤' },
-                    { label: 'Children Visitors', count: rv?.totalChildren ?? 0, color: '#10B981', icon: '👶' },
-                    { label: 'Total Visitors', count: rv?.totalVisitors ?? 0, color: '#F59E0B', icon: '👥' },
-                    { label: 'Total Registrations', count: rv?.totalRegistrations ?? 0, color: '#8B5CF6', icon: '📝' },
-                  ];
+                  let items: Array<{ label: string; count: number; color: string; icon: string }> = [];
+
+                  if (visitorMetric === 'visitors') {
+                    items = [
+                      { label: 'Adult Visitors', count: rv?.totalAdults ?? 0, color: '#3B82F6', icon: '👤' },
+                      { label: 'Children Visitors', count: rv?.totalChildren ?? 0, color: '#10B981', icon: '👶' },
+                      { label: 'Total Visitors', count: rv?.totalVisitors ?? 0, color: '#F59E0B', icon: '👥' },
+                    ];
+                  } else {
+                    // Registration Metric
+                    items = [
+                      { label: 'Total Registrations', count: rv?.totalRegistrations ?? 0, color: '#8B5CF6', icon: '📝' },
+                    ];
+
+                    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#6366F1', '#14B8A6', '#F97316'];
+
+                    if (regBreakdownFilter === 'occupation') {
+                      const breakdown = rv?.occupationBreakdown || [];
+                      breakdown.forEach((item, idx) => {
+                        items.push({
+                          label: item.occupation,
+                          count: item.count,
+                          color: colors[idx % colors.length],
+                          icon: '💼'
+                        });
+                      });
+                    } else {
+                      const breakdown = rv?.citizenshipBreakdown || [];
+                      breakdown.forEach((item, idx) => {
+                        items.push({
+                          label: item.citizenship,
+                          count: item.count,
+                          color: colors[idx % colors.length],
+                          icon: '🌐'
+                        });
+                      });
+                    }
+                  }
+
                   const maxCount = Math.max(...items.map(i => i.count), 1);
 
                   return (
