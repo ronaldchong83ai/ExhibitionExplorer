@@ -8,7 +8,7 @@ import { OCCUPATIONS, CITIZENSHIPS } from '@/lib/constants/profileOptions';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: '', email: '', occupation: '', citizenship: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', dob: '', email: '', occupation: '', citizenship: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -85,6 +85,10 @@ export default function RegisterPage() {
     setOccupationError('');
     setCitizenshipError('');
 
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      setError('First name and last name are required');
+      return;
+    }
     if (!isOtpVerified) {
       setError('Please verify your email address using OTP first.');
       return;
@@ -128,7 +132,9 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: form.name,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          dob: form.dob,
           email: form.email,
           occupation: matchedOccupation,
           citizenship: matchedCitizenship,
@@ -163,20 +169,50 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label" htmlFor="reg-firstname">
+                <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>First Name
+              </label>
+              <input
+                id="reg-firstname"
+                name="firstName"
+                type="text"
+                className="form-input"
+                placeholder="First name"
+                value={form.firstName}
+                onChange={handleChange}
+                required
+                autoComplete="given-name"
+              />
+            </div>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label" htmlFor="reg-lastname">
+                <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>Last Name
+              </label>
+              <input
+                id="reg-lastname"
+                name="lastName"
+                type="text"
+                className="form-input"
+                placeholder="Last name"
+                value={form.lastName}
+                onChange={handleChange}
+                required
+                autoComplete="family-name"
+              />
+            </div>
+          </div>
+
           <div className="form-group">
-            <label className="form-label" htmlFor="reg-name">
-              <span style={{ color: '#ef4444', marginRight: '4px' }}>*</span>Full Name
-            </label>
+            <label className="form-label" htmlFor="reg-dob">Birth Date</label>
             <input
-              id="reg-name"
-              name="name"
-              type="text"
+              id="reg-dob"
+              name="dob"
+              type="date"
               className="form-input"
-              placeholder="Enter your full name"
-              value={form.name}
+              value={form.dob}
               onChange={handleChange}
-              required
-              autoComplete="name"
             />
           </div>
 
@@ -376,7 +412,8 @@ export default function RegisterPage() {
             disabled={
               loading || 
               !isOtpVerified || 
-              !form.name.trim() || 
+              !form.firstName.trim() || 
+              !form.lastName.trim() || 
               !form.email.trim() || 
               !form.occupation.trim() ||
               !form.citizenship.trim() ||

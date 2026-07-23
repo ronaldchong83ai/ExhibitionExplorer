@@ -13,6 +13,8 @@ export default function ProfileDetailsPage() {
   const [profile, setProfile] = useState<Partial<User>>({
     email: '',
     name: '',
+    firstName: '',
+    lastName: '',
     contact: '',
     profilePic: null,
     dob: '',
@@ -32,7 +34,13 @@ export default function ProfileDetailsPage() {
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data) {
-          setProfile(data.data);
+          const uData = data.data;
+          const parts = (uData.name || '').trim().split(/\s+/);
+          setProfile({
+            ...uData,
+            firstName: uData.firstName || parts[0] || '',
+            lastName: uData.lastName || parts.slice(1).join(' ') || '',
+          });
         } else {
           setError(data.error || 'Failed to load profile details');
         }
@@ -78,8 +86,12 @@ export default function ProfileDetailsPage() {
     setOccupationError('');
     setCitizenshipError('');
 
-    if (!profile.name?.trim()) {
-      setError("Name is required.");
+    if (!profile.firstName?.trim()) {
+      setError("First Name is required.");
+      return;
+    }
+    if (!profile.lastName?.trim()) {
+      setError("Last Name is required.");
       return;
     }
 
@@ -221,17 +233,31 @@ export default function ProfileDetailsPage() {
             </div>
           )}
 
-          <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
-            <label className="form-label" htmlFor="profile-name">Full Name *</label>
-            <input
-              id="profile-name"
-              type="text"
-              className="form-input"
-              value={profile.name || ''}
-              onChange={e => handleInputChange('name', e.target.value)}
-              required
-              disabled={saving}
-            />
+          <div style={{ display: 'flex', gap: '12px', marginBottom: 'var(--space-4)' }}>
+            <div className="form-group" style={{ flex: 1, margin: 0 }}>
+              <label className="form-label" htmlFor="profile-firstname">First Name *</label>
+              <input
+                id="profile-firstname"
+                type="text"
+                className="form-input"
+                value={profile.firstName || ''}
+                onChange={e => handleInputChange('firstName', e.target.value)}
+                required
+                disabled={saving}
+              />
+            </div>
+            <div className="form-group" style={{ flex: 1, margin: 0 }}>
+              <label className="form-label" htmlFor="profile-lastname">Last Name *</label>
+              <input
+                id="profile-lastname"
+                type="text"
+                className="form-input"
+                value={profile.lastName || ''}
+                onChange={e => handleInputChange('lastName', e.target.value)}
+                required
+                disabled={saving}
+              />
+            </div>
           </div>
 
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
@@ -247,7 +273,7 @@ export default function ProfileDetailsPage() {
           </div>
 
           <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
-            <label className="form-label" htmlFor="profile-dob">Date of Birth</label>
+            <label className="form-label" htmlFor="profile-dob">Birth Date</label>
             <input
               id="profile-dob"
               type="date"

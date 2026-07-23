@@ -29,10 +29,17 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { name, contact, profilePic, dob, occupation, citizenship } = body;
+  const { firstName, lastName, name, contact, profilePic, dob, occupation, citizenship } = body;
 
-  if (!name || !name.trim()) {
-    return Response.json({ success: false, error: 'Name is required' }, { status: 400 });
+  const fName = firstName ? firstName.trim() : (name ? name.trim().split(' ')[0] : '');
+  const lName = lastName ? lastName.trim() : (name ? name.trim().split(' ').slice(1).join(' ') : '');
+  const fullName = `${fName} ${lName}`.trim() || (name ? name.trim() : '');
+
+  if (!fName) {
+    return Response.json({ success: false, error: 'First name is required' }, { status: 400 });
+  }
+  if (!lName) {
+    return Response.json({ success: false, error: 'Last name is required' }, { status: 400 });
   }
   if (!occupation || !occupation.trim()) {
     return Response.json({ success: false, error: 'Occupation is required' }, { status: 400 });
@@ -50,7 +57,9 @@ export async function PUT(request: NextRequest) {
 
   const updatedUser = {
     ...data.users[userIdx],
-    name: name.trim(),
+    name: fullName,
+    firstName: fName,
+    lastName: lName,
     contact: contact ? contact.trim() : '',
     profilePic: profilePic || null,
     dob: dob || null,

@@ -9,6 +9,8 @@ export type ActionType = 'SCAN_QR' | 'SCAN_LINKRAY' | 'REDEEM_COUPON' | 'VIEW_EX
 export interface User {
   id: string;
   name: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string;
   contact: string;
   passwordHash: string;

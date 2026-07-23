@@ -75,12 +75,19 @@ export async function getData(): Promise<DataStore> {
   ]);
 
   return {
-    users: users.map(u => ({
-      ...u,
-      role: u.role as UserRole,
-      provider: u.provider as AuthProvider,
-      createdAt: u.createdAt.toISOString()
-    })),
+    users: users.map(u => {
+      const parts = (u.name || '').trim().split(/\s+/);
+      const derivedFirst = u.firstName || parts[0] || '';
+      const derivedLast = u.lastName || parts.slice(1).join(' ') || '';
+      return {
+        ...u,
+        firstName: derivedFirst,
+        lastName: derivedLast,
+        role: u.role as UserRole,
+        provider: u.provider as AuthProvider,
+        createdAt: u.createdAt.toISOString()
+      };
+    }),
     exhibitions: (() => {
       const mapped = exhibitions.map(e => ({
         ...e,
@@ -179,7 +186,9 @@ export async function saveData(data: DataStore): Promise<void> {
     ...data.users.map(u => prisma.user.upsert({
       where: { id: u.id },
       update: {
-        name: u.name,
+        name: u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+        firstName: u.firstName ?? null,
+        lastName: u.lastName ?? null,
         email: u.email,
         contact: u.contact,
         passwordHash: u.passwordHash,
@@ -193,7 +202,9 @@ export async function saveData(data: DataStore): Promise<void> {
       },
       create: {
         id: u.id,
-        name: u.name,
+        name: u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+        firstName: u.firstName ?? null,
+        lastName: u.lastName ?? null,
         email: u.email,
         contact: u.contact,
         passwordHash: u.passwordHash,

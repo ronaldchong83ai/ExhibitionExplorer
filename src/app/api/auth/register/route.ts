@@ -6,10 +6,14 @@ import type { User } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, occupation, citizenship, contact } = await request.json();
+    const { firstName, lastName, name, email, password, occupation, citizenship, contact, dob } = await request.json();
 
-    if (!name || !email || !password || !occupation || !citizenship) {
-      return Response.json({ success: false, error: 'Name, email, password, occupation, and citizenship are required' }, { status: 400 });
+    const fName = firstName ? firstName.trim() : (name ? name.trim().split(' ')[0] : '');
+    const lName = lastName ? lastName.trim() : (name ? name.trim().split(' ').slice(1).join(' ') : '');
+    const fullName = `${fName} ${lName}`.trim() || (name ? name.trim() : '');
+
+    if (!fName || !lName || !email || !password || !occupation || !citizenship) {
+      return Response.json({ success: false, error: 'First name, last name, email, password, occupation, and citizenship are required' }, { status: 400 });
     }
 
     const data = await getData();
@@ -33,7 +37,10 @@ export async function POST(request: NextRequest) {
 
     const newUser: User = {
       id: generateId(),
-      name: name.trim(),
+      name: fullName,
+      firstName: fName,
+      lastName: lName,
+      dob: dob ? dob.trim() : null,
       email: email.toLowerCase(),
       contact: contact ? contact.trim() : '',
       passwordHash: simpleHash(password),
