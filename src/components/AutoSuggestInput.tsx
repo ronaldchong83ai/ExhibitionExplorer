@@ -12,6 +12,7 @@ interface AutoSuggestInputProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  error?: string | null;
 }
 
 export default function AutoSuggestInput({
@@ -24,6 +25,7 @@ export default function AutoSuggestInput({
   required,
   disabled,
   className = 'form-input',
+  error,
 }: AutoSuggestInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [filteredOptions, setFilteredOptions] = useState<string[]>(options);
@@ -66,6 +68,22 @@ export default function AutoSuggestInput({
     setIsOpen(false);
   };
 
+  const handleBlur = () => {
+    const trimmed = value.trim();
+    if (trimmed) {
+      const isExactMatch = options.some(opt => opt.toLowerCase() === trimmed.toLowerCase());
+      if (!isExactMatch) {
+        // Find suggestions matching the typed input
+        const matches = options.filter(opt => opt.toLowerCase().includes(trimmed.toLowerCase()));
+        if (matches.length === 1) {
+          // If only one suggestion matches, use that match when focus out of field
+          onChange(matches[0]);
+        }
+      }
+    }
+    setIsOpen(false);
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (!isOpen) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -97,7 +115,7 @@ export default function AutoSuggestInput({
           id={id}
           name={name}
           type="text"
-          className={className}
+          className={`${className} ${error ? 'input-error' : ''}`}
           placeholder={placeholder}
           value={value}
           onChange={(e) => {
@@ -105,11 +123,16 @@ export default function AutoSuggestInput({
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
+          onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           required={required}
           disabled={disabled}
           autoComplete="off"
-          style={{ width: '100%', paddingRight: '36px' }}
+          style={{
+            width: '100%',
+            paddingRight: '36px',
+            borderColor: error ? '#ef4444' : undefined,
+          }}
         />
         <button
           type="button"
@@ -174,7 +197,10 @@ export default function AutoSuggestInput({
             return (
               <li
                 key={idx}
-                onClick={() => handleSelect(opt)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleSelect(opt);
+                }}
                 style={{
                   padding: '10px 14px',
                   fontSize: 'var(--font-size-sm)',
@@ -200,6 +226,20 @@ export default function AutoSuggestInput({
             );
           })}
         </ul>
+      )}
+
+      {error && (
+        <span
+          style={{
+            color: '#ef4444',
+            fontSize: 'var(--font-size-xs)',
+            marginTop: '4px',
+            display: 'block',
+            fontWeight: 500,
+          }}
+        >
+          {error}
+        </span>
       )}
     </div>
   );

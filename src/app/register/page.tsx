@@ -20,6 +20,9 @@ export default function RegisterPage() {
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [otpSuccessMessage, setOtpSuccessMessage] = useState('');
 
+  const [occupationError, setOccupationError] = useState('');
+  const [citizenshipError, setCitizenshipError] = useState('');
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -79,19 +82,37 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setOccupationError('');
+    setCitizenshipError('');
 
     if (!isOtpVerified) {
       setError('Please verify your email address using OTP first.');
       return;
     }
     if (!form.occupation.trim()) {
-      setError('Occupation is required');
+      setOccupationError('Occupation is required');
       return;
     }
+    const matchedOccupation = OCCUPATIONS.find(
+      opt => opt.toLowerCase() === form.occupation.trim().toLowerCase()
+    );
+    if (!matchedOccupation) {
+      setOccupationError('not in list');
+      return;
+    }
+
     if (!form.citizenship.trim()) {
-      setError('Citizenship is required');
+      setCitizenshipError('Citizenship is required');
       return;
     }
+    const matchedCitizenship = CITIZENSHIPS.find(
+      opt => opt.toLowerCase() === form.citizenship.trim().toLowerCase()
+    );
+    if (!matchedCitizenship) {
+      setCitizenshipError('not in list');
+      return;
+    }
+
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -109,8 +130,8 @@ export default function RegisterPage() {
         body: JSON.stringify({
           name: form.name,
           email: form.email,
-          occupation: form.occupation,
-          citizenship: form.citizenship,
+          occupation: matchedOccupation,
+          citizenship: matchedCitizenship,
           password: form.password,
         }),
       });
@@ -283,9 +304,13 @@ export default function RegisterPage() {
               name="occupation"
               placeholder="Select or type your occupation"
               value={form.occupation}
-              onChange={(val) => setForm(prev => ({ ...prev, occupation: val }))}
+              onChange={(val) => {
+                setForm(prev => ({ ...prev, occupation: val }));
+                setOccupationError('');
+              }}
               options={OCCUPATIONS}
               required
+              error={occupationError}
             />
           </div>
 
@@ -298,9 +323,13 @@ export default function RegisterPage() {
               name="citizenship"
               placeholder="Select or type your citizenship"
               value={form.citizenship}
-              onChange={(val) => setForm(prev => ({ ...prev, citizenship: val }))}
+              onChange={(val) => {
+                setForm(prev => ({ ...prev, citizenship: val }));
+                setCitizenshipError('');
+              }}
               options={CITIZENSHIPS}
               required
+              error={citizenshipError}
             />
           </div>
 

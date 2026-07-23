@@ -24,6 +24,8 @@ export default function ProfileDetailsPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [occupationError, setOccupationError] = useState('');
+  const [citizenshipError, setCitizenshipError] = useState('');
 
   useEffect(() => {
     fetch('/api/my-profile')
@@ -44,6 +46,8 @@ export default function ProfileDetailsPage() {
 
   const handleInputChange = (field: keyof User, value: string) => {
     setProfile(prev => ({ ...prev, [field]: value }));
+    if (field === 'occupation') setOccupationError('');
+    if (field === 'citizenship') setCitizenshipError('');
   };
 
   const handleImageClick = () => {
@@ -70,20 +74,53 @@ export default function ProfileDetailsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile.name?.trim() || !profile.occupation?.trim() || !profile.citizenship?.trim()) {
-      setError("Name, occupation, and citizenship are required.");
+    setError('');
+    setOccupationError('');
+    setCitizenshipError('');
+
+    if (!profile.name?.trim()) {
+      setError("Name is required.");
+      return;
+    }
+
+    if (!profile.occupation?.trim()) {
+      setOccupationError("Occupation is required");
+      return;
+    }
+    const matchedOccupation = OCCUPATIONS.find(
+      opt => opt.toLowerCase() === profile.occupation?.trim().toLowerCase()
+    );
+    if (!matchedOccupation) {
+      setOccupationError("not in list");
+      return;
+    }
+
+    if (!profile.citizenship?.trim()) {
+      setCitizenshipError("Citizenship is required");
+      return;
+    }
+    const matchedCitizenship = CITIZENSHIPS.find(
+      opt => opt.toLowerCase() === profile.citizenship?.trim().toLowerCase()
+    );
+    if (!matchedCitizenship) {
+      setCitizenshipError("not in list");
       return;
     }
 
     setSaving(true);
-    setError('');
     setSuccess(false);
 
     try {
+      const payload = {
+        ...profile,
+        occupation: matchedOccupation,
+        citizenship: matchedCitizenship,
+      };
+
       const res = await fetch('/api/my-profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile),
+        body: JSON.stringify(payload),
       }).then(r => r.json());
 
       if (res.success) {
@@ -231,6 +268,7 @@ export default function ProfileDetailsPage() {
               options={OCCUPATIONS}
               required
               disabled={saving}
+              error={occupationError}
             />
           </div>
 
@@ -244,6 +282,7 @@ export default function ProfileDetailsPage() {
               options={CITIZENSHIPS}
               required
               disabled={saving}
+              error={citizenshipError}
             />
           </div>
 
