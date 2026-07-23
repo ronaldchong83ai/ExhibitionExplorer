@@ -1,12 +1,17 @@
 import { getData } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { verifyCache, withCacheHeaders, getCacheVersion } from '@/lib/cache';
+import { getCacheVersion } from '@/lib/cache';
 
 export async function GET(request: Request) {
-  const cacheRes = await verifyCache(request, 'home');
-  if (cacheRes) return cacheRes;
-
   const session = await getSession();
+  const dbVer = await getCacheVersion('home');
+  const cacheTag = session ? `${dbVer}_${session.id}` : `${dbVer}_anon`;
+
+  const ifNoneMatch = request.headers.get('if-none-match')?.replace(/W\//, '').replace(/"/g, '');
+  if (ifNoneMatch === cacheTag) {
+    return new Response(null, { status: 304 });
+  }
+
   const data = await getData();
   const enabledExhibitions = data.exhibitions.filter(e => e.enabled !== false);
   
@@ -20,8 +25,14 @@ export async function GET(request: Request) {
   }
 
   if (!exhibition) {
-    const version = await getCacheVersion('home');
-    return withCacheHeaders({ success: true, data: { exhibitions: [] } }, version);
+    return new Response(JSON.stringify({ success: true, data: { exhibitions: [] } }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'ETag': `"${cacheTag}"`,
+        'Cache-Control': 'no-cache',
+      }
+    });
   }
 
   const infos = data.homePageInfos
@@ -63,6 +74,20 @@ export async function GET(request: Request) {
     }
   }
 
-  const version = await getCacheVersion('home');
-  return withCacheHeaders({ success: true, data: { exhibition, exhibitions: enabledExhibitions, infos, userRegistration } }, version);
+  return new Response(JSON.stringify({
+    success: true,
+    data: {
+      exhibition,
+      exhibitions: enabledExhibitions,
+      infos,
+      userRegistration
+    }
+  }), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'ETag': `"${cacheTag}"`,
+      'Cache-Control': 'no-cache',
+    }
+  });
 }

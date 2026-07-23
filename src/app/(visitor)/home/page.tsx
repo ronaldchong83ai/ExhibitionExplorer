@@ -67,6 +67,14 @@ export default function HomePage() {
       }
     };
     fetchHomeData();
+
+    const handleSessionUpdate = () => {
+      fetchHomeData();
+    };
+    window.addEventListener('session-update', handleSessionUpdate);
+    return () => {
+      window.removeEventListener('session-update', handleSessionUpdate);
+    };
   }, [selectedExhibitionId]);
 
   const startScanner = async () => {
