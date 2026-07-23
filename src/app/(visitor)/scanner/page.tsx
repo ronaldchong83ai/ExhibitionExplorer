@@ -38,9 +38,12 @@ export default function ScannerPage() {
     };
   }, []);
 
+  const [externalUrl, setExternalUrl] = useState<string | null>(null);
+
   const startScanner = async () => {
     setCameraError(null);
     setScanResult(null);
+    setExternalUrl(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' } // Prefer rear camera
@@ -86,6 +89,7 @@ export default function ScannerPage() {
   const registerScan = async (scannedCode: string) => {
     setRegistering(true);
     setRegistrationMessage(null);
+    setExternalUrl(null);
     try {
       const res = await fetch('/api/scanner', {
         method: 'POST',
@@ -101,6 +105,21 @@ export default function ScannerPage() {
           type: 'error',
         });
       } else {
+        if (data.urlLink) {
+          let targetUrl = data.urlLink.trim();
+          if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+            targetUrl = `https://${targetUrl}`;
+          }
+          setExternalUrl(targetUrl);
+
+          // Open browser new tab with corresponding external URL if exists
+          try {
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
+          } catch (e) {
+            console.error("Failed to open external URL tab:", e);
+          }
+        }
+
         if (data.matched) {
           if (data.alreadyScanned) {
             setRegistrationMessage({
@@ -347,6 +366,30 @@ export default function ScannerPage() {
               }}
             >
               {registrationMessage.text}
+            </div>
+          )}
+
+          {externalUrl && (
+            <div style={{ marginTop: 'var(--space-3)' }}>
+              <a
+                href={externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary btn-full"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  textDecoration: 'none',
+                  padding: '10px 16px',
+                  fontWeight: 600,
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}
+              >
+                🌐 Open External Page in New Tab
+              </a>
             </div>
           )}
 

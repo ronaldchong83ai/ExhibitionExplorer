@@ -17,6 +17,24 @@ export async function POST(request: NextRequest) {
     const cleanScanId = scanId.trim();
     const data = await getData();
 
+    // Look for corresponding external URL in scanItems or if scanId is a URL
+    let urlLink: string | null = null;
+    for (const voucher of data.vouchers) {
+      if (voucher.scanItems && Array.isArray(voucher.scanItems)) {
+        const itemMatch = (voucher.scanItems as any[]).find(
+          item => item && item.scanId && item.scanId.trim().toLowerCase() === cleanScanId.toLowerCase()
+        );
+        if (itemMatch && itemMatch.urlLink && itemMatch.urlLink.trim()) {
+          const rawUrl = itemMatch.urlLink.trim();
+          urlLink = (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) ? rawUrl : `https://${rawUrl}`;
+          break;
+        }
+      }
+    }
+    if (!urlLink && (cleanScanId.startsWith('http://') || cleanScanId.startsWith('https://'))) {
+      urlLink = cleanScanId;
+    }
+
     // Find all active vouchers that require this scanId and are within their display periods
     const now = new Date();
     const matchingVouchers = data.vouchers.filter(v => {
@@ -44,6 +62,7 @@ export async function POST(request: NextRequest) {
       return Response.json({
         success: true,
         matched: false,
+        urlLink,
         message: `Scanned code "${cleanScanId}" successfully, but it does not match any active vouchers.`
       });
     }
@@ -95,6 +114,7 @@ export async function POST(request: NextRequest) {
         success: true,
         matched: true,
         alreadyScanned: true,
+        urlLink,
         message: `You have already scanned "${cleanScanId}" for: ${registeredVouchers.join(', ')}.`
       });
     }
@@ -102,6 +122,7 @@ export async function POST(request: NextRequest) {
     return Response.json({
       success: true,
       matched: true,
+      urlLink,
       message: `Scan registered successfully for: ${registeredVouchers.join(', ')}.`,
       registeredVouchers
     });
