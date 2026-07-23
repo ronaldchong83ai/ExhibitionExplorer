@@ -101,6 +101,7 @@ model Voucher {
   description     String
   details         String
   requiredScanIds String[]
+  scanItems       Json?
   displayFrom     DateTime?
   displayTo       DateTime?
   createdAt       DateTime  @default(now())

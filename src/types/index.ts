@@ -94,6 +94,13 @@ export interface VenueMap {
   uploadedAt: string;
 }
 
+export interface RequiredScanItem {
+  scanId: string;
+  stampImageUrl?: string | null;
+  urlName?: string | null;
+  urlLink?: string | null;
+}
+
 export interface Voucher {
   id: string;
   exhibitionId: string;
@@ -101,6 +108,7 @@ export interface Voucher {
   description: string;
   details: string;
   requiredScanIds: string[];
+  scanItems?: RequiredScanItem[] | null;
   displayFrom?: string;
   displayTo?: string;
   createdAt: string;

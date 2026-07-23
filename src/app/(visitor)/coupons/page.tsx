@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import jsQR from 'jsqr';
-import type { Exhibition, SessionUser } from '@/types';
+import type { Exhibition, SessionUser, RequiredScanItem } from '@/types';
 import { formatDateDDMMMYYYY, formatDatetimeDDMMMYYYY } from '@/lib/date';
 
 interface VoucherWithProgress {
@@ -11,6 +11,8 @@ interface VoucherWithProgress {
   description: string;
   details: string;
   requiredScanIds: string[];
+  scanItems?: RequiredScanItem[] | null;
+  scannedIds?: string[];
   displayFrom?: string;
   displayTo?: string;
   collectedCount: number;
@@ -359,6 +361,103 @@ export default function CouponsPage() {
                 <p className="voucher-progress-text">
                   {v.isCollected ? 'Voucher collected!' : `${v.collectedCount} of ${v.totalRequired} scans collected`}
                 </p>
+
+                {/* Stamps & External Links Section */}
+                {(() => {
+                  const items: RequiredScanItem[] = (v.scanItems && v.scanItems.length > 0)
+                    ? v.scanItems
+                    : (v.requiredScanIds || []).map(id => ({ scanId: id }));
+
+                  if (items.length === 0) return null;
+
+                  return (
+                    <div style={{ marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)', borderTop: '1px solid var(--color-border)' }}>
+                      <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'block', marginBottom: '8px' }}>
+                        Required Scans & Stamps:
+                      </span>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                        {items.map((item, sIdx) => {
+                          const isScanned = (v.scannedIds && v.scannedIds.includes(item.scanId)) || v.isCollected;
+                          return (
+                            <div
+                              key={sIdx}
+                              style={{
+                                padding: '8px',
+                                background: isScanned ? 'rgba(16, 185, 129, 0.08)' : 'var(--color-bg-input)',
+                                border: isScanned ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--color-border)',
+                                borderRadius: 'var(--radius-md)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                textAlign: 'center',
+                                position: 'relative'
+                              }}
+                            >
+                              {/* Stamp Image or Placeholder Icon */}
+                              {item.stampImageUrl ? (
+                                <div style={{ position: 'relative', width: '48px', height: '48px', marginBottom: '6px' }}>
+                                  <img
+                                    src={item.stampImageUrl}
+                                    alt={item.scanId}
+                                    style={{
+                                      width: '48px',
+                                      height: '48px',
+                                      borderRadius: '8px',
+                                      objectFit: 'cover',
+                                      border: isScanned ? '2px solid #10B981' : '1px solid var(--color-border)',
+                                      boxShadow: isScanned ? '0 0 10px rgba(16, 185, 129, 0.3)' : 'none',
+                                      filter: isScanned ? 'none' : 'grayscale(40%)'
+                                    }}
+                                  />
+                                  {isScanned && (
+                                    <span style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#10B981', color: 'white', fontSize: '10px', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>✓</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: isScanned ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)', border: isScanned ? '1px solid #10B981' : '1px dashed var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', marginBottom: '6px' }}>
+                                  {isScanned ? '💮' : '🎯'}
+                                </div>
+                              )}
+
+                              {/* Scan ID Label */}
+                              <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: isScanned ? '#10B981' : 'var(--color-text-primary)', wordBreak: 'break-all' }}>
+                                {item.scanId}
+                              </span>
+
+                              {/* Status Badge */}
+                              <span style={{ fontSize: '10px', marginTop: '2px', padding: '1px 6px', borderRadius: '4px', background: isScanned ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)', color: isScanned ? '#10B981' : 'var(--color-text-tertiary)' }}>
+                                {isScanned ? 'Scanned' : 'Pending'}
+                              </span>
+
+                              {/* External URL Link */}
+                              {item.urlLink && (
+                                <a
+                                  href={item.urlLink.startsWith('http://') || item.urlLink.startsWith('https://') ? item.urlLink : `https://${item.urlLink}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    fontSize: '11px',
+                                    color: '#3B82F6',
+                                    textDecoration: 'none',
+                                    marginTop: '6px',
+                                    fontWeight: 500,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '2px',
+                                    wordBreak: 'break-all'
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  🔗 {item.urlName?.trim() ? item.urlName : item.urlLink}
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {user?.role === 'REDEMPTOR' && (
                   <div className="redemptor-actions" style={{ marginTop: 'var(--space-4)' }}>

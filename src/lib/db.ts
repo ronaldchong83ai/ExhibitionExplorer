@@ -120,6 +120,7 @@ export async function getData(): Promise<DataStore> {
     })),
     vouchers: vouchers.map(v => ({
       ...v,
+      scanItems: (v.scanItems as any) ?? null,
       displayFrom: v.displayFrom ? v.displayFrom.toISOString() : '',
       displayTo: v.displayTo ? v.displayTo.toISOString() : '',
       createdAt: v.createdAt.toISOString()
@@ -416,6 +417,7 @@ export async function saveData(data: DataStore): Promise<void> {
         description: v.description,
         details: v.details,
         requiredScanIds: v.requiredScanIds,
+        scanItems: (v.scanItems as any) ?? null,
         displayFrom: v.displayFrom ? new Date(v.displayFrom) : null,
         displayTo: v.displayTo ? new Date(v.displayTo) : null,
         createdAt: new Date(v.createdAt)
@@ -427,6 +429,7 @@ export async function saveData(data: DataStore): Promise<void> {
         description: v.description,
         details: v.details,
         requiredScanIds: v.requiredScanIds,
+        scanItems: (v.scanItems as any) ?? null,
         displayFrom: v.displayFrom ? new Date(v.displayFrom) : null,
         displayTo: v.displayTo ? new Date(v.displayTo) : null,
         createdAt: new Date(v.createdAt)

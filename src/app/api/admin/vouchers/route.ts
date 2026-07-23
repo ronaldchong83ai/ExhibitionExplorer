@@ -32,9 +32,17 @@ export async function POST(request: NextRequest) {
   }
 
   const data = await getData();
+  const scanItems = body.scanItems !== undefined ? body.scanItems : null;
+  const requiredScanIds = scanItems ? scanItems.map((s: any) => s.scanId) : (body.requiredScanIds || []);
+
   const item = {
-    id: generateId(), exhibitionId: body.exhibitionId, title: body.title || '', description: body.description || '',
-    details: body.details || '', requiredScanIds: body.requiredScanIds || [],
+    id: generateId(),
+    exhibitionId: body.exhibitionId,
+    title: body.title || '',
+    description: body.description || '',
+    details: body.details || '',
+    requiredScanIds,
+    scanItems,
     displayFrom: body.displayFrom ? new Date(body.displayFrom).toISOString() : '',
     displayTo: body.displayTo ? new Date(body.displayTo).toISOString() : '',
     createdAt: new Date().toISOString(),
@@ -62,12 +70,19 @@ export async function PUT(request: NextRequest) {
   const data = await getData();
   const idx = data.vouchers.findIndex(v => v.id === body.id);
   if (idx === -1) return Response.json({ success: false, error: 'Not found' }, { status: 404 });
+
+  const updatedScanItems = body.scanItems !== undefined ? body.scanItems : data.vouchers[idx].scanItems;
+  const updatedRequiredScanIds = body.scanItems !== undefined 
+    ? body.scanItems.map((s: any) => s.scanId) 
+    : (body.requiredScanIds ?? data.vouchers[idx].requiredScanIds);
+
   data.vouchers[idx] = { 
     ...data.vouchers[idx], 
     title: body.title ?? data.vouchers[idx].title, 
     description: body.description ?? data.vouchers[idx].description, 
     details: body.details ?? data.vouchers[idx].details, 
-    requiredScanIds: body.requiredScanIds ?? data.vouchers[idx].requiredScanIds,
+    requiredScanIds: updatedRequiredScanIds,
+    scanItems: updatedScanItems,
     displayFrom: body.displayFrom !== undefined ? (body.displayFrom ? new Date(body.displayFrom).toISOString() : '') : data.vouchers[idx].displayFrom,
     displayTo: body.displayTo !== undefined ? (body.displayTo ? new Date(body.displayTo).toISOString() : '') : data.vouchers[idx].displayTo
   };

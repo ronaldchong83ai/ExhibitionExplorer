@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import jsQR from 'jsqr';
 import { useRouter } from 'next/navigation';
-import type { User, Exhibition, HomePageInfo, StageEvent, Exhibitor, Voucher, Product, PurchaseConversion } from '@/types';
+import type { User, Exhibition, HomePageInfo, StageEvent, Exhibitor, Voucher, Product, PurchaseConversion, RequiredScanItem } from '@/types';
 import type { SessionUser } from '@/types';
 import { formatDateDDMMMYYYY, formatDatetimeDDMMMYYYY } from '@/lib/date';
 
@@ -104,6 +104,15 @@ export default function AdminPage() {
   const [activeVoucherForScans, setActiveVoucherForScans] = useState<Voucher | null>(null);
   const [scanLogs, setScanLogs] = useState<any[]>([]);
   const [scanLogsLoading, setScanLogsLoading] = useState(false);
+
+  // Voucher Manage Scan IDs states
+  const [showManageScanIdsModal, setShowManageScanIdsModal] = useState(false);
+  const [activeVoucherForScanIds, setActiveVoucherForScanIds] = useState<Voucher | null>(null);
+  const [scanItemsList, setScanItemsList] = useState<RequiredScanItem[]>([]);
+  const [editingScanItemIdx, setEditingScanItemIdx] = useState<number | null>(null);
+  const [editingScanItem, setEditingScanItem] = useState<RequiredScanItem>({ scanId: '', stampImageUrl: '', urlName: '', urlLink: '' });
+  const [newScanItem, setNewScanItem] = useState<RequiredScanItem>({ scanId: '', stampImageUrl: '', urlName: '', urlLink: '' });
+  const [savingScanIds, setSavingScanIds] = useState(false);
 
   // About Us editor states & refs
   const [aboutUsContent, setAboutUsContent] = useState('');
@@ -869,6 +878,115 @@ export default function AdminPage() {
     }
   };
 
+  const openManageScanIds = (v: Voucher) => {
+    setActiveVoucherForScanIds(v);
+    let items: RequiredScanItem[] = [];
+    if (v.scanItems && Array.isArray(v.scanItems) && v.scanItems.length > 0) {
+      items = v.scanItems.map(item => ({
+        scanId: item.scanId || '',
+        stampImageUrl: item.stampImageUrl || '',
+        urlName: item.urlName || '',
+        urlLink: item.urlLink || '',
+      }));
+    } else if (v.requiredScanIds && Array.isArray(v.requiredScanIds) && v.requiredScanIds.length > 0) {
+      items = v.requiredScanIds.map(id => ({
+        scanId: id,
+        stampImageUrl: '',
+        urlName: '',
+        urlLink: '',
+      }));
+    }
+    setScanItemsList(items);
+    setEditingScanItemIdx(null);
+    setNewScanItem({ scanId: '', stampImageUrl: '', urlName: '', urlLink: '' });
+    setShowManageScanIdsModal(true);
+  };
+
+  const handleStampImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEditing: boolean) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      alert("Stamp image size must be under 1MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const base64 = uploadEvent.target?.result as string;
+      if (isEditing) {
+        setEditingScanItem(prev => ({ ...prev, stampImageUrl: base64 }));
+      } else {
+        setNewScanItem(prev => ({ ...prev, stampImageUrl: base64 }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addScanItem = () => {
+    if (!newScanItem.scanId.trim()) {
+      alert('Scan ID is required.');
+      return;
+    }
+    if (scanItemsList.some(item => item.scanId.trim().toLowerCase() === newScanItem.scanId.trim().toLowerCase())) {
+      alert('This Scan ID is already in the list.');
+      return;
+    }
+    setScanItemsList(prev => [...prev, {
+      scanId: newScanItem.scanId.trim(),
+      stampImageUrl: newScanItem.stampImageUrl || '',
+      urlName: newScanItem.urlName || '',
+      urlLink: newScanItem.urlLink || '',
+    }]);
+    setNewScanItem({ scanId: '', stampImageUrl: '', urlName: '', urlLink: '' });
+  };
+
+  const startScanItemEdit = (idx: number, item: RequiredScanItem) => {
+    setEditingScanItemIdx(idx);
+    setEditingScanItem({ ...item });
+  };
+
+  const saveScanItemEdit = (idx: number) => {
+    if (!editingScanItem.scanId.trim()) {
+      alert('Scan ID cannot be empty.');
+      return;
+    }
+    setScanItemsList(prev => prev.map((item, i) => i === idx ? {
+      scanId: editingScanItem.scanId.trim(),
+      stampImageUrl: editingScanItem.stampImageUrl || '',
+      urlName: editingScanItem.urlName || '',
+      urlLink: editingScanItem.urlLink || '',
+    } : item));
+    setEditingScanItemIdx(null);
+  };
+
+  const deleteScanItem = (idx: number) => {
+    setScanItemsList(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const saveManageScanIds = async () => {
+    if (!activeVoucherForScanIds) return;
+    setSavingScanIds(true);
+    try {
+      const body = {
+        id: activeVoucherForScanIds.id,
+        scanItems: scanItemsList,
+        requiredScanIds: scanItemsList.map(item => item.scanId),
+      };
+      const d = await putData('/api/admin/vouchers', body);
+      if (d.success) {
+        setShowManageScanIdsModal(false);
+        const reload = await fetchData(`/api/admin/vouchers?exhibitionId=${selectedExhibition}`);
+        if (reload.success) setVouchers(reload.data);
+      } else {
+        alert(d.error || "Failed to save scan IDs");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save scan IDs");
+    } finally {
+      setSavingScanIds(false);
+    }
+  };
+
   const executeAddVisitor = async (emailStr: string) => {
     if (!activeVoucherForCollections || !emailStr) return;
 
@@ -1611,6 +1729,20 @@ export default function AdminPage() {
                   </button>
                   <button
                     className="btn btn-icon"
+                    onClick={() => openManageScanIds(v)}
+                    title="Manage Scan IDs"
+                    style={{ background: 'rgba(16, 185, 129, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: '#10B981', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+                      <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                      <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+                      <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+                      <rect x="7" y="7" width="10" height="10" rx="1"/>
+                    </svg>
+                  </button>
+                  <button
+                    className="btn btn-icon"
                     onClick={() => openScanLogs(v)}
                     title="Scan Logs"
                     style={{ background: 'rgba(139, 92, 246, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: '#8B5CF6', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
@@ -1637,13 +1769,33 @@ export default function AdminPage() {
               <span className="admin-card-date" style={{ display: 'block', marginTop: 4, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                 🕒 Display: {v.displayFrom && v.displayTo ? `${formatDatetimeDDMMMYYYY(v.displayFrom)} - ${formatDatetimeDDMMMYYYY(v.displayTo)}` : 'Always active'}
               </span>
-              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 6 }}>
-                <span style={{ fontWeight: 600, display: 'block', marginBottom: 2 }}>Required scans:</span>
-                <ul style={{ paddingLeft: '16px', margin: '2px 0', listStyleType: 'disc', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  {v.requiredScanIds.map((scanId, sIdx) => (
-                    <li key={sIdx}>{scanId}</li>
-                  ))}
-                </ul>
+              <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginTop: 8 }}>
+                <span style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>Required scans ({v.requiredScanIds?.length || 0}):</span>
+                {(!v.scanItems || v.scanItems.length === 0) ? (
+                  <ul style={{ paddingLeft: '16px', margin: '2px 0', listStyleType: 'disc', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {v.requiredScanIds.map((scanId, sIdx) => (
+                      <li key={sIdx}>{scanId}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                    {v.scanItems.map((item, sIdx) => (
+                      <div key={sIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', background: 'var(--color-bg-input)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
+                        {item.stampImageUrl ? (
+                          <img src={item.stampImageUrl} alt={item.scanId} style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ fontSize: '14px' }}>🏷️</span>
+                        )}
+                        <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{item.scanId}</span>
+                        {item.urlLink && (
+                          <a href={item.urlLink.startsWith('http') ? item.urlLink : `https://${item.urlLink}`} target="_blank" rel="noopener noreferrer" style={{ color: '#3B82F6', textDecoration: 'none', marginLeft: '2px' }}>
+                            🔗 {item.urlName || 'Link'}
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -1809,57 +1961,160 @@ export default function AdminPage() {
                   <div className="form-group"><label className="form-label">Display Period From</label><input className="form-input" type="datetime-local" value={formData.displayFrom || ''} onChange={e => handleFormChange('displayFrom', e.target.value)} /></div>
                   <div className="form-group"><label className="form-label">Display Period To</label><input className="form-input" type="datetime-local" value={formData.displayTo || ''} onChange={e => handleFormChange('displayTo', e.target.value)} /></div>
                   
-                  <div className="form-group" style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3)', background: 'rgba(255,255,255,0.02)', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: 'var(--space-4)' }}>
-                    <label className="form-label" style={{ fontWeight: 600, margin: 0 }}>Required Scan IDs List</label>
-                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', margin: '0 0 var(--space-1) 0' }}>Visitor must scan all these items to unlock the voucher.</p>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {formScanIds.length === 0 ? (
-                        <p style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-xs)', margin: '4px 0', fontStyle: 'italic' }}>No Scan IDs added yet.</p>
-                      ) : (
-                        formScanIds.map((sid, idx) => (
-                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            {editingScanIdx === idx ? (
-                              <>
+                  <div className="form-actions">
+                    <button className="btn btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
+                    <button className="btn btn-primary" onClick={saveVoucher}>Save</button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+          {showManageScanIdsModal && activeVoucherForScanIds && (
+            <>
+              <div className="modal-overlay" onClick={() => setShowManageScanIdsModal(false)} />
+              <div className="modal-content" style={{ maxWidth: '540px', width: '90%' }}>
+                <div className="modal-handle" />
+                <div className="admin-form animate-scale-in" style={{ marginTop: 0 }}>
+                  <h4 style={{ fontWeight: 600, fontSize: 'var(--font-size-base)', marginBottom: 'var(--space-1)' }}>
+                    🎯 Manage Scan IDs: {activeVoucherForScanIds.title}
+                  </h4>
+                  <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', marginBottom: 'var(--space-4)' }}>
+                    Add or update required scan IDs, stamp images, and external website links for this voucher.
+                  </p>
+
+                  {/* List of Scan Items */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '350px', overflowY: 'auto', marginBottom: 'var(--space-4)' }}>
+                    {scanItemsList.length === 0 ? (
+                      <p style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-xs)', fontStyle: 'italic', textAlign: 'center', margin: '12px 0' }}>
+                        No scan IDs added yet. Add one below.
+                      </p>
+                    ) : (
+                      scanItemsList.map((item, idx) => (
+                        <div key={idx} style={{ padding: '10px 12px', background: 'var(--color-bg-input)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+                          {editingScanItemIdx === idx ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div style={{ display: 'flex', gap: '8px' }}>
                                 <input
                                   className="form-input"
-                                  value={editingScanVal}
-                                  onChange={e => setEditingScanVal(e.target.value)}
-                                  style={{ flex: 1, padding: '4px 8px', fontSize: 'var(--font-size-sm)' }}
+                                  placeholder="Scan ID *"
+                                  value={editingScanItem.scanId}
+                                  onChange={e => setEditingScanItem(prev => ({ ...prev, scanId: e.target.value }))}
+                                  style={{ flex: 1, fontSize: 'var(--font-size-sm)' }}
                                 />
-                                <button className="btn btn-primary" type="button" onClick={() => saveScanIdEdit(idx)} style={{ padding: '6px 10px', fontSize: 'var(--font-size-xs)', height: 'auto' }}>Save</button>
-                                <button className="btn btn-secondary" type="button" onClick={() => setEditingScanIdx(null)} style={{ padding: '6px 10px', fontSize: 'var(--font-size-xs)', height: 'auto' }}>Cancel</button>
-                              </>
-                            ) : (
-                              <>
-                                <span className="chip" style={{ flex: 1, padding: '6px 12px', fontSize: 'var(--font-size-sm)', background: 'var(--color-bg-input)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>{sid}</span>
-                                <button className="btn btn-secondary" type="button" onClick={() => startScanIdEdit(idx, sid)} style={{ padding: '4px 10px', fontSize: 'var(--font-size-xs)', height: 'auto' }}>Edit</button>
-                                <button className="btn btn-icon" type="button" onClick={() => deleteScanId(idx)} style={{ background: 'rgba(255, 107, 107, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--color-accent-coral)', fontSize: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px' }}>
-                                  ✕
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {editingScanItem.stampImageUrl ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <img src={editingScanItem.stampImageUrl} alt="Stamp" style={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover' }} />
+                                    <button type="button" className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px' }} onClick={() => setEditingScanItem(prev => ({ ...prev, stampImageUrl: '' }))}>Remove Stamp</button>
+                                  </div>
+                                ) : (
+                                  <label className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                    📷 Upload Stamp Image
+                                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleStampImageUpload(e, true)} />
+                                  </label>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <input
+                                  className="form-input"
+                                  placeholder="Name of URL (e.g. Exhibitor Site)"
+                                  value={editingScanItem.urlName || ''}
+                                  onChange={e => setEditingScanItem(prev => ({ ...prev, urlName: e.target.value }))}
+                                  style={{ flex: 1, fontSize: 'var(--font-size-xs)' }}
+                                />
+                                <input
+                                  className="form-input"
+                                  placeholder="External URL Link (e.g. https://...)"
+                                  value={editingScanItem.urlLink || ''}
+                                  onChange={e => setEditingScanItem(prev => ({ ...prev, urlLink: e.target.value }))}
+                                  style={{ flex: 1, fontSize: 'var(--font-size-xs)' }}
+                                />
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                <button className="btn btn-secondary" type="button" onClick={() => setEditingScanItemIdx(null)} style={{ padding: '4px 10px', fontSize: '11px' }}>Cancel</button>
+                                <button className="btn btn-primary" type="button" onClick={() => saveScanItemEdit(idx)} style={{ padding: '4px 12px', fontSize: '11px' }}>Save Item</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                                {item.stampImageUrl ? (
+                                  <img src={item.stampImageUrl} alt="Stamp" style={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover', border: '1px solid var(--color-border)' }} />
+                                ) : (
+                                  <div style={{ width: '36px', height: '36px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>🏷️</div>
+                                )}
+                                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>{item.scanId}</span>
+                                  {item.urlLink && (
+                                    <a href={item.urlLink.startsWith('http') ? item.urlLink : `https://${item.urlLink}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#3B82F6', textDecoration: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      🔗 {item.urlName || item.urlLink}
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                <button className="btn btn-secondary" type="button" onClick={() => startScanItemEdit(idx, item)} style={{ padding: '4px 10px', fontSize: '11px' }}>Edit</button>
+                                <button className="btn btn-icon" type="button" onClick={() => deleteScanItem(idx)} style={{ background: 'rgba(255, 107, 107, 0.1)', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: 'var(--radius-sm)', color: 'var(--color-accent-coral)', fontSize: '12px', width: '28px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
 
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  {/* Add New Scan ID Form */}
+                  <div style={{ border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-md)', padding: '12px', marginBottom: 'var(--space-4)', background: 'rgba(255,255,255,0.02)' }}>
+                    <span style={{ fontWeight: 600, fontSize: 'var(--font-size-xs)', display: 'block', marginBottom: '8px', color: 'var(--color-text-secondary)' }}>+ Add New Scan Item</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <input
                         className="form-input"
-                        placeholder="e.g. scan-fc-1"
-                        value={newScanId}
-                        onChange={e => setNewScanId(e.target.value)}
-                        style={{ flex: 1, padding: '6px 10px', fontSize: 'var(--font-size-sm)' }}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addScanId(); } }}
+                        placeholder="Scan ID * (e.g. BOOTH_01)"
+                        value={newScanItem.scanId}
+                        onChange={e => setNewScanItem(prev => ({ ...prev, scanId: e.target.value }))}
+                        style={{ fontSize: 'var(--font-size-sm)' }}
                       />
-                      <button className="btn btn-primary" type="button" onClick={addScanId} style={{ padding: '6px 14px', fontSize: 'var(--font-size-xs)', height: 'auto' }}>Add</button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {newScanItem.stampImageUrl ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <img src={newScanItem.stampImageUrl} alt="Stamp preview" style={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover' }} />
+                            <button type="button" className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px' }} onClick={() => setNewScanItem(prev => ({ ...prev, stampImageUrl: '' }))}>Remove Stamp</button>
+                          </div>
+                        ) : (
+                          <label className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            📷 Upload Stamp Image (Max 1MB)
+                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleStampImageUpload(e, false)} />
+                          </label>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input
+                          className="form-input"
+                          placeholder="Name of URL (e.g. Exhibitor Website)"
+                          value={newScanItem.urlName || ''}
+                          onChange={e => setNewScanItem(prev => ({ ...prev, urlName: e.target.value }))}
+                          style={{ flex: 1, fontSize: 'var(--font-size-xs)' }}
+                        />
+                        <input
+                          className="form-input"
+                          placeholder="External URL Link (e.g. https://example.com)"
+                          value={newScanItem.urlLink || ''}
+                          onChange={e => setNewScanItem(prev => ({ ...prev, urlLink: e.target.value }))}
+                          style={{ flex: 1, fontSize: 'var(--font-size-xs)' }}
+                        />
+                      </div>
+                      <button className="btn btn-primary" type="button" onClick={addScanItem} style={{ marginTop: '4px', padding: '8px 14px', fontSize: 'var(--font-size-xs)' }}>
+                        + Add Scan Item to List
+                      </button>
                     </div>
                   </div>
 
                   <div className="form-actions">
-                    <button className="btn btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
-                    <button className="btn btn-primary" onClick={saveVoucher}>Save</button>
+                    <button className="btn btn-secondary" type="button" onClick={() => setShowManageScanIdsModal(false)}>Cancel</button>
+                    <button className="btn btn-primary" type="button" onClick={saveManageScanIds} disabled={savingScanIds}>
+                      {savingScanIds ? 'Saving...' : 'Save Scan IDs'}
+                    </button>
                   </div>
                 </div>
               </div>

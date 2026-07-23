@@ -29,9 +29,11 @@ export async function GET(request: Request) {
     })
     .map(v => {
       const scans = data.voucherScans.filter(s => s.voucherId === v.id && s.userId === session.id);
+      const scannedIds = scans.map(s => s.scanId);
       const isCollected = data.voucherCollections.some(c => c.voucherId === v.id && c.userId === session.id);
       return {
         ...v,
+        scannedIds,
         collectedCount: scans.length,
         totalRequired: v.requiredScanIds.length,
         isComplete: scans.length >= v.requiredScanIds.length,
