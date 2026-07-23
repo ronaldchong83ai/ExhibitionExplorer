@@ -30,8 +30,21 @@ model Exhibition {
   details         String
   enabled         Boolean  @default(true)
   logoUrl         String?
+  scanId          String?
   createdBy       String
   createdAt       DateTime @default(now())
+}
+
+model ExhibitionRegistration {
+  id            String   @id @default(uuid())
+  exhibitionId  String
+  userId        String
+  adultsCount   Int      @default(1)
+  childrenCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([exhibitionId, userId])
 }
 
 model HomePageInfo {

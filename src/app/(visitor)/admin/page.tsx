@@ -1334,10 +1334,15 @@ export default function AdminPage() {
                   <h4>{ex.title}</h4>
                   {ex.enabled === false && <span className="badge badge-coral" style={{ fontSize: 'var(--font-size-xs)' }}>Disabled</span>}
                 </div>
-                <button className="btn btn-secondary" onClick={e => { e.stopPropagation(); openForm(ex.id, { title: ex.title, description: ex.description, eventPeriodFrom: ex.eventPeriodFrom?.split('T')[0] || '', eventPeriodTo: ex.eventPeriodTo?.split('T')[0] || '', details: ex.details || '', enabled: String(ex.enabled !== false), logoUrl: ex.logoUrl || '' }); }}>Edit</button>
+                <button className="btn btn-secondary" onClick={e => { e.stopPropagation(); openForm(ex.id, { title: ex.title, description: ex.description, eventPeriodFrom: ex.eventPeriodFrom?.split('T')[0] || '', eventPeriodTo: ex.eventPeriodTo?.split('T')[0] || '', details: ex.details || '', enabled: String(ex.enabled !== false), logoUrl: ex.logoUrl || '', scanId: ex.scanId || '' }); }}>Edit</button>
               </div>
               <p className="admin-card-desc">{ex.description}</p>
-              <span className="admin-card-date">{formatDateDDMMMYYYY(ex.eventPeriodFrom)} - {formatDateDDMMMYYYY(ex.eventPeriodTo)}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <span className="admin-card-date">{formatDateDDMMMYYYY(ex.eventPeriodFrom)} - {formatDateDDMMMYYYY(ex.eventPeriodTo)}</span>
+                {ex.scanId && (
+                  <span className="badge badge-purple" style={{ fontSize: '11px' }}>🏷️ Scan ID: {ex.scanId}</span>
+                )}
+              </div>
             </div>
           ))}
           {showForm && (
@@ -1349,7 +1354,8 @@ export default function AdminPage() {
                   <h4>{editingId ? 'Edit' : 'Add'} Exhibition</h4>
                   <div className="form-group"><label className="form-label">Title</label><input className="form-input" value={formData.title || ''} onChange={e => handleFormChange('title', e.target.value)} /></div>
                   <div className="form-group"><label className="form-label">Description</label><textarea className="form-textarea" value={formData.description || ''} onChange={e => handleFormChange('description', e.target.value)} /></div>
-                  
+                  <div className="form-group"><label className="form-label">Exhibition Scan ID</label><input className="form-input" placeholder="e.g. EX_SG_2026" value={formData.scanId || ''} onChange={e => handleFormChange('scanId', e.target.value)} /></div>
+
                   <div className="form-group">
                     <label className="form-label">Event Logo</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

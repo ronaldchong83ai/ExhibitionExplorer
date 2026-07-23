@@ -1,10 +1,12 @@
 import { getData } from '@/lib/db';
+import { getSession } from '@/lib/auth';
 import { verifyCache, withCacheHeaders, getCacheVersion } from '@/lib/cache';
 
 export async function GET(request: Request) {
   const cacheRes = await verifyCache(request, 'home');
   if (cacheRes) return cacheRes;
 
+  const session = await getSession();
   const data = await getData();
   const enabledExhibitions = data.exhibitions.filter(e => e.enabled !== false);
   
@@ -48,6 +50,19 @@ export async function GET(request: Request) {
       return tA - tB;
     });
 
+  let userRegistration = null;
+  if (session && data.exhibitionRegistrations) {
+    const foundReg = data.exhibitionRegistrations.find(
+      r => r.exhibitionId === exhibition.id && r.userId === session.id
+    );
+    if (foundReg) {
+      userRegistration = {
+        adultsCount: foundReg.adultsCount,
+        childrenCount: foundReg.childrenCount
+      };
+    }
+  }
+
   const version = await getCacheVersion('home');
-  return withCacheHeaders({ success: true, data: { exhibition, exhibitions: enabledExhibitions, infos } }, version);
+  return withCacheHeaders({ success: true, data: { exhibition, exhibitions: enabledExhibitions, infos, userRegistration } }, version);
 }

@@ -4,7 +4,7 @@ import { Pool } from 'pg';
 import type {
   User, Exhibition, HomePageInfo, StageEvent, Exhibitor,
   Product, PurchaseConversion, VenueMap, Voucher, VoucherScan, VoucherCollection,
-  Favourite, ActionLog, Notification, NotificationSetting, PushSubscription, AboutUs,
+  Favourite, ActionLog, Notification, NotificationSetting, PushSubscription, AboutUs, ExhibitionRegistration,
   UserRole, AuthProvider, HomeInfoType, FavouriteType, ActionType
 } from '@/types';
 
@@ -26,6 +26,7 @@ export interface DataStore {
   notificationSettings: NotificationSetting[];
   pushSubscriptions: PushSubscription[];
   aboutUs: AboutUs[];
+  exhibitionRegistrations: ExhibitionRegistration[];
 }
 
 let prisma: PrismaClient;
@@ -51,7 +52,7 @@ export async function getData(): Promise<DataStore> {
     users, exhibitions, homePageInfos, stageEvents, exhibitors,
     products, purchaseConversions, venueMaps, vouchers, voucherScans,
     favourites, actionLogs, notifications, notificationSettings, pushSubscriptions,
-    voucherCollections, aboutUs
+    voucherCollections, aboutUs, exhibitionRegistrations
   ] = await Promise.all([
     prisma.user.findMany(),
     prisma.exhibition.findMany(),
@@ -70,6 +71,7 @@ export async function getData(): Promise<DataStore> {
     prisma.pushSubscription.findMany(),
     prisma.voucherCollection.findMany(),
     prisma.aboutUs.findMany(),
+    prisma.exhibitionRegistration.findMany(),
   ]);
 
   return {
@@ -160,6 +162,11 @@ export async function getData(): Promise<DataStore> {
       ...p,
       createdAt: p.createdAt.toISOString()
     })),
+    exhibitionRegistrations: exhibitionRegistrations.map(r => ({
+      ...r,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString()
+    })),
   };
 }
 
@@ -178,10 +185,10 @@ export async function saveData(data: DataStore): Promise<void> {
         passwordHash: u.passwordHash,
         role: u.role,
         provider: u.provider,
-        profilePic: u.profilePic ?? null,
-        dob: u.dob ?? null,
-        occupation: u.occupation ?? null,
-        citizenship: u.citizenship ?? null,
+        profilePic: u.profilePic,
+        dob: u.dob,
+        occupation: u.occupation,
+        citizenship: u.citizenship,
         createdAt: new Date(u.createdAt)
       },
       create: {
@@ -192,10 +199,10 @@ export async function saveData(data: DataStore): Promise<void> {
         passwordHash: u.passwordHash,
         role: u.role,
         provider: u.provider,
-        profilePic: u.profilePic ?? null,
-        dob: u.dob ?? null,
-        occupation: u.occupation ?? null,
-        citizenship: u.citizenship ?? null,
+        profilePic: u.profilePic,
+        dob: u.dob,
+        occupation: u.occupation,
+        citizenship: u.citizenship,
         createdAt: new Date(u.createdAt)
       }
     })),
@@ -217,6 +224,7 @@ export async function saveData(data: DataStore): Promise<void> {
         details: e.details,
         enabled: e.enabled !== false,
         logoUrl: e.logoUrl || null,
+        scanId: e.scanId || null,
         createdBy: e.createdBy,
         createdAt: new Date(e.createdAt)
       },
@@ -229,6 +237,7 @@ export async function saveData(data: DataStore): Promise<void> {
         details: e.details,
         enabled: e.enabled !== false,
         logoUrl: e.logoUrl || null,
+        scanId: e.scanId || null,
         createdBy: e.createdBy,
         createdAt: new Date(e.createdAt)
       }
@@ -628,6 +637,33 @@ export async function saveData(data: DataStore): Promise<void> {
       })),
       prisma.aboutUs.deleteMany({
         where: { id: { notIn: aboutUsIds } }
+      })
+    ]);
+  }
+
+  // 18. ExhibitionRegistrations
+  if (data.exhibitionRegistrations) {
+    const regIds = data.exhibitionRegistrations.map(r => r.id);
+    await Promise.all([
+      ...data.exhibitionRegistrations.map(r => prisma.exhibitionRegistration.upsert({
+        where: { id: r.id },
+        update: {
+          exhibitionId: r.exhibitionId,
+          userId: r.userId,
+          adultsCount: r.adultsCount,
+          childrenCount: r.childrenCount,
+          updatedAt: new Date()
+        },
+        create: {
+          id: r.id,
+          exhibitionId: r.exhibitionId,
+          userId: r.userId,
+          adultsCount: r.adultsCount,
+          childrenCount: r.childrenCount
+        }
+      })),
+      prisma.exhibitionRegistration.deleteMany({
+        where: { id: { notIn: regIds } }
       })
     ]);
   }

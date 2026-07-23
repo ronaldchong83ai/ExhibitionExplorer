@@ -30,8 +30,19 @@ export interface Exhibition {
   details: string;
   enabled: boolean;
   logoUrl?: string | null;
+  scanId?: string | null;
   createdBy: string;
   createdAt: string;
+}
+
+export interface ExhibitionRegistration {
+  id: string;
+  exhibitionId: string;
+  userId: string;
+  adultsCount: number;
+  childrenCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface HomePageInfo {

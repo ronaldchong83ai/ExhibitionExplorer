@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
     details: body.details || '',
     enabled: body.enabled !== false,
     logoUrl: body.logoUrl || null,
+    scanId: body.scanId ? body.scanId.trim() : null,
     createdBy: session.id,
     createdAt: new Date().toISOString(),
   };
@@ -70,6 +71,7 @@ export async function PUT(request: NextRequest) {
     details: body.details ?? data.exhibitions[idx].details,
     enabled: body.enabled ?? data.exhibitions[idx].enabled,
     logoUrl: body.logoUrl !== undefined ? body.logoUrl : data.exhibitions[idx].logoUrl,
+    scanId: body.scanId !== undefined ? (body.scanId ? body.scanId.trim() : null) : data.exhibitions[idx].scanId,
   };
   await saveData(data);
   return Response.json({ success: true, data: data.exhibitions[idx] });
