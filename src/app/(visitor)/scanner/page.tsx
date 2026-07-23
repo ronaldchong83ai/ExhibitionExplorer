@@ -411,7 +411,8 @@ export default function ScannerPage() {
           padding: var(--space-5) !important;
         }
         .camera-preview {
-          aspect-ratio: 1;
+          width: 100%;
+          height: 260px;
           max-height: 320px;
           background: var(--color-bg-primary);
           border-radius: var(--radius-lg);
@@ -422,6 +423,8 @@ export default function ScannerPage() {
           position: relative;
           overflow: hidden;
           border: 1px solid var(--color-border);
+          margin: 0 auto;
+          text-align: center;
         }
         .camera-video {
           width: 100%;
@@ -441,7 +444,10 @@ export default function ScannerPage() {
           width: 100%;
           height: 100%;
           position: absolute;
+          top: 0;
+          left: 0;
           z-index: 1;
+          text-align: center;
           transition: background 0.2s;
         }
         .camera-placeholder:hover {
@@ -456,6 +462,7 @@ export default function ScannerPage() {
           width: 200px;
           height: 200px;
           position: relative;
+          margin: 0 auto;
           z-index: 2;
         }
         .scan-corner {
@@ -485,6 +492,9 @@ export default function ScannerPage() {
         .scan-instruction {
           position: absolute;
           bottom: var(--space-4);
+          left: 0;
+          right: 0;
+          text-align: center;
           color: var(--color-text-tertiary);
           font-size: var(--font-size-sm);
           z-index: 2;

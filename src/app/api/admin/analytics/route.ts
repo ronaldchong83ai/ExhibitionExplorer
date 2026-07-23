@@ -104,13 +104,23 @@ export async function GET(request: NextRequest) {
     };
   });
 
+  // 4. Visitor Registrations (Adults & Children)
+  const exhibitionRegistrations = (data.exhibitionRegistrations || []).filter(r => r.exhibitionId === exhibitionId);
+  const registeredVisitors = {
+    totalRegistrations: exhibitionRegistrations.length,
+    totalAdults: exhibitionRegistrations.reduce((sum, r) => sum + r.adultsCount, 0),
+    totalChildren: exhibitionRegistrations.reduce((sum, r) => sum + r.childrenCount, 0),
+    totalVisitors: exhibitionRegistrations.reduce((sum, r) => sum + r.adultsCount + r.childrenCount, 0)
+  };
+
   return Response.json({
     success: true,
     data: {
       redemptionRates,
       vouchersPerDay,
       purchaseConversions,
-      exhibitorSales
+      exhibitorSales,
+      registeredVisitors
     }
   });
 }

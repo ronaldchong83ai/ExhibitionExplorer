@@ -312,7 +312,7 @@ export default function HomePage() {
               {regStep === 'scan' ? (
                 <div>
                   <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-3)' }}>
-                    Please scan the LinkRay board for this exhibition to proceed:
+                    Please scan the exhibition's LinkRay board/QR Code at entrance to proceed:
                   </p>
 
                   {scanError && (
@@ -336,7 +336,7 @@ export default function HomePage() {
 
                   {/* Manual Scan ID Code Entry Option */}
                   <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
-                    <label className="form-label" style={{ fontSize: 'var(--font-size-xs)' }}>Enter Scan ID manually:</label>
+                    <label className="form-label" style={{ fontSize: 'var(--font-size-xs)' }}>OR Enter Scan ID manually:</label>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <input
                         className="form-input"

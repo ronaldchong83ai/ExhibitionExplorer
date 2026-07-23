@@ -66,6 +66,12 @@ export default function AdminPage() {
     vouchersPerDay: Array<{ date: string; count: number }>;
     purchaseConversions: Array<{ date: string; value: number }>;
     exhibitorSales: Array<{ exhibitorId: string; name: string; value: number }>;
+    registeredVisitors?: {
+      totalRegistrations: number;
+      totalAdults: number;
+      totalChildren: number;
+      totalVisitors: number;
+    };
   } | null>(null);
   const [filterExhibitor, setFilterExhibitor] = useState('');
   const [filterVoucher, setFilterVoucher] = useState('');
@@ -2449,6 +2455,39 @@ export default function AdminPage() {
       {section === 'analytics' && selectedExhibition && (
         <div className="admin-section animate-fade-in">
           <h3 className="section-title">📊 Analytics</h3>
+
+          {/* Registered Visitors Summary Card */}
+          <div className="admin-card card" style={{ padding: '20px', marginBottom: '24px', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: 'var(--font-size-base)' }}>
+              🎟️ Event Registered Visitors
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+              <div style={{ padding: '12px', background: 'var(--color-bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Visitors</span>
+                <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--color-text-primary)', marginTop: '4px', display: 'block' }}>
+                  {analyticsData?.registeredVisitors?.totalVisitors ?? 0}
+                </span>
+              </div>
+              <div style={{ padding: '12px', background: 'var(--color-bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Adult Visitors</span>
+                <span style={{ fontSize: '24px', fontWeight: 800, color: '#3B82F6', marginTop: '4px', display: 'block' }}>
+                  {analyticsData?.registeredVisitors?.totalAdults ?? 0}
+                </span>
+              </div>
+              <div style={{ padding: '12px', background: 'var(--color-bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Children Visitors</span>
+                <span style={{ fontSize: '24px', fontWeight: 800, color: '#10B981', marginTop: '4px', display: 'block' }}>
+                  {analyticsData?.registeredVisitors?.totalChildren ?? 0}
+                </span>
+              </div>
+              <div style={{ padding: '12px', background: 'var(--color-bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', textAlign: 'center' }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Registrations</span>
+                <span style={{ fontSize: '24px', fontWeight: 800, color: '#8B5CF6', marginTop: '4px', display: 'block' }}>
+                  {analyticsData?.registeredVisitors?.totalRegistrations ?? 0}
+                </span>
+              </div>
+            </div>
+          </div>
 
           {/* Chart Selector Dropdown */}
           <div className="form-group" style={{ marginBottom: '24px', maxWidth: '320px' }}>
