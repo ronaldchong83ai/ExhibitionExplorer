@@ -62,15 +62,30 @@ export async function GET(request: Request) {
     });
 
   let userRegistration = null;
-  if (session && data.exhibitionRegistrations) {
-    const foundReg = data.exhibitionRegistrations.find(
-      r => r.exhibitionId === exhibition.id && r.userId === session.id
-    );
-    if (foundReg) {
-      userRegistration = {
-        adultsCount: foundReg.adultsCount,
-        childrenCount: foundReg.childrenCount
+  let userProfile = null;
+  if (session) {
+    const userObj = data.users.find(u => u.id === session.id);
+    if (userObj) {
+      const parts = (userObj.name || '').trim().split(/\s+/);
+      userProfile = {
+        firstName: userObj.firstName || parts[0] || '',
+        lastName: userObj.lastName || parts.slice(1).join(' ') || '',
+        dob: userObj.dob || '',
+        email: userObj.email || '',
+        occupation: userObj.occupation || '',
+        citizenship: userObj.citizenship || '',
       };
+    }
+    if (data.exhibitionRegistrations) {
+      const foundReg = data.exhibitionRegistrations.find(
+        r => r.exhibitionId === exhibition.id && r.userId === session.id
+      );
+      if (foundReg) {
+        userRegistration = {
+          adultsCount: foundReg.adultsCount,
+          childrenCount: foundReg.childrenCount
+        };
+      }
     }
   }
 
@@ -80,7 +95,8 @@ export async function GET(request: Request) {
       exhibition,
       exhibitions: enabledExhibitions,
       infos,
-      userRegistration
+      userRegistration,
+      userProfile
     }
   }), {
     status: 200,

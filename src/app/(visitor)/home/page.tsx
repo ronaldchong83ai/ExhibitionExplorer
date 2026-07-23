@@ -22,6 +22,15 @@ export default function HomePage() {
 
   // Exhibition Registration states & scanner refs
   const [userRegistration, setUserRegistration] = useState<{ adultsCount: number; childrenCount: number } | null>(null);
+  const [userProfile, setUserProfile] = useState<{
+    firstName?: string;
+    lastName?: string;
+    dob?: string;
+    email?: string;
+    occupation?: string;
+    citizenship?: string;
+  } | null>(null);
+
   const [showRegModal, setShowRegModal] = useState(false);
   const [regStep, setRegStep] = useState<'scan' | 'select'>('scan');
   const [scannedScanId, setScannedScanId] = useState('');
@@ -55,6 +64,7 @@ export default function HomePage() {
           setExhibitions(data.data.exhibitions || []);
           setInfos(data.data.infos || []);
           setUserRegistration(data.data.userRegistration || null);
+          setUserProfile(data.data.userProfile || null);
           if (data.data.exhibition && !selectedExhibitionId) {
             setSelectedExhibitionId(data.data.exhibition.id);
             localStorage.setItem('selectedExhibitionId', data.data.exhibition.id);
@@ -391,7 +401,7 @@ export default function HomePage() {
                     </select>
                   </div>
 
-                  <div className="form-group" style={{ marginBottom: 'var(--space-5)' }}>
+                  <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
                     <label className="form-label">Number of Children</label>
                     <select
                       className="form-input"
@@ -405,6 +415,42 @@ export default function HomePage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* My Profile Information Section */}
+                  <div style={{ marginTop: 'var(--space-4)', marginBottom: 'var(--space-5)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)' }}>
+                    <h4 style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      👤 My Profile
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', fontSize: 'var(--font-size-xs)' }}>
+                      <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                        <span style={{ color: 'var(--color-text-tertiary)', display: 'block', marginBottom: '2px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>First Name</span>
+                        <strong style={{ color: 'var(--color-text-primary)' }}>{userProfile?.firstName || '-'}</strong>
+                      </div>
+                      <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                        <span style={{ color: 'var(--color-text-tertiary)', display: 'block', marginBottom: '2px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Last Name</span>
+                        <strong style={{ color: 'var(--color-text-primary)' }}>{userProfile?.lastName || '-'}</strong>
+                      </div>
+                      <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                        <span style={{ color: 'var(--color-text-tertiary)', display: 'block', marginBottom: '2px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Birth Date</span>
+                        <strong style={{ color: 'var(--color-text-primary)' }}>{userProfile?.dob || '-'}</strong>
+                      </div>
+                      <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                        <span style={{ color: 'var(--color-text-tertiary)', display: 'block', marginBottom: '2px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email</span>
+                        <strong style={{ color: 'var(--color-text-primary)', wordBreak: 'break-all' }}>{userProfile?.email || '-'}</strong>
+                      </div>
+                      <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                        <span style={{ color: 'var(--color-text-tertiary)', display: 'block', marginBottom: '2px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Occupation</span>
+                        <strong style={{ color: 'var(--color-text-primary)' }}>{userProfile?.occupation || '-'}</strong>
+                      </div>
+                      <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                        <span style={{ color: 'var(--color-text-tertiary)', display: 'block', marginBottom: '2px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Citizenship</span>
+                        <strong style={{ color: 'var(--color-text-primary)' }}>{userProfile?.citizenship || '-'}</strong>
+                      </div>
+                    </div>
+                    <p style={{ marginTop: 'var(--space-3)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-tertiary)', lineHeight: 1.4 }}>
+                      If any of your information is not accurate, update your profile in My Page --&gt; My Profile Details.
+                    </p>
                   </div>
 
                   <div className="form-actions" style={{ display: 'flex', gap: '8px' }}>
