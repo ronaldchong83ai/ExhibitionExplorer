@@ -77,7 +77,7 @@ export default function AdminPage() {
   const [filterVoucher, setFilterVoucher] = useState('');
   const [selectedMetric, setSelectedMetric] = useState<'daily' | 'exhibitor'>('daily');
   const [redemptionMetric, setRedemptionMetric] = useState<'daily' | 'total'>('total');
-  const [selectedChart, setSelectedChart] = useState<'redemption' | 'purchase'>('redemption');
+  const [selectedChart, setSelectedChart] = useState<'visitors' | 'redemption' | 'purchase'>('visitors');
   const [showBookingsModal, setShowBookingsModal] = useState(false);
   const [activeFacilityForBookings, setActiveFacilityForBookings] = useState<any>(null);
 
@@ -2496,12 +2496,13 @@ export default function AdminPage() {
               className="form-input"
               value={selectedChart}
               onChange={e => {
-                setSelectedChart(e.target.value as 'redemption' | 'purchase');
+                setSelectedChart(e.target.value as 'visitors' | 'redemption' | 'purchase');
                 setFilterExhibitor('');
                 setFilterVoucher('');
               }}
               style={{ padding: '8px 12px', fontSize: '14px' }}
             >
+              <option value="visitors">🎟️ Event Registered Visitors Chart</option>
               <option value="redemption">🎫 Voucher Redemption Chart</option>
               <option value="purchase">📈 Purchase Conversion Chart</option>
             </select>
@@ -2594,6 +2595,62 @@ export default function AdminPage() {
           )}
 
           <div className="analytics-grid">
+            {/* Event Registered Visitors Chart (Horizontal Bars) */}
+            {selectedChart === 'visitors' && (
+              <div className="admin-card card" style={{ padding: '24px' }}>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  🎟️ Event Registered Visitors
+                </h4>
+                <p className="admin-card-desc" style={{ marginBottom: '24px' }}>
+                  Registered visitor count breakdown with horizontal bar metrics
+                </p>
+
+                {(() => {
+                  const rv = analyticsData?.registeredVisitors;
+                  const items = [
+                    { label: 'Adult Visitors', count: rv?.totalAdults ?? 0, color: '#3B82F6', icon: '👤' },
+                    { label: 'Children Visitors', count: rv?.totalChildren ?? 0, color: '#10B981', icon: '👶' },
+                    { label: 'Total Visitors', count: rv?.totalVisitors ?? 0, color: '#F59E0B', icon: '👥' },
+                    { label: 'Total Registrations', count: rv?.totalRegistrations ?? 0, color: '#8B5CF6', icon: '📝' },
+                  ];
+                  const maxCount = Math.max(...items.map(i => i.count), 1);
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      {items.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span>{item.icon}</span>
+                              <strong style={{ color: 'var(--color-text-primary)' }}>{item.label}</strong>
+                            </span>
+                            <span style={{ fontWeight: 700, color: item.color }}>{item.count}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <div style={{ flex: 1, height: '22px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: 'var(--radius-full)', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                              <div
+                                style={{
+                                  width: `${(item.count / maxCount) * 100}%`,
+                                  height: '100%',
+                                  background: item.color,
+                                  borderRadius: 'var(--radius-full)',
+                                  transition: 'width 0.5s ease',
+                                  boxShadow: `0 0 10px ${item.color}44`
+                                }}
+                              />
+                            </div>
+                            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 700, color: 'var(--color-text-primary)', minWidth: '40px', textAlign: 'right' }}>
+                              {item.count}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             {/* Redemption Rate Chart (Horizontal) */}
             {selectedChart === 'redemption' && (
               <div className="admin-card card" style={{ padding: '24px' }}>
