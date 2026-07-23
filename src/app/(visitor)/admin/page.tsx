@@ -2009,10 +2009,13 @@ export default function AdminPage() {
                                     <button type="button" className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px' }} onClick={() => setEditingScanItem(prev => ({ ...prev, stampImageUrl: '' }))}>Remove Stamp</button>
                                   </div>
                                 ) : (
-                                  <label className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                    📷 Upload Stamp Image
-                                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleStampImageUpload(e, true)} />
-                                  </label>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <label className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                      📷 Upload Stamp Image
+                                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleStampImageUpload(e, true)} />
+                                    </label>
+                                    <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
+                                  </div>
                                 )}
                               </div>
                               <div style={{ display: 'flex', gap: '8px' }}>
@@ -2082,10 +2085,13 @@ export default function AdminPage() {
                             <button type="button" className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px' }} onClick={() => setNewScanItem(prev => ({ ...prev, stampImageUrl: '' }))}>Remove Stamp</button>
                           </div>
                         ) : (
-                          <label className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            📷 Upload Stamp Image (Max 1MB)
-                            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleStampImageUpload(e, false)} />
-                          </label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <label className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              📷 Upload Stamp Image
+                              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleStampImageUpload(e, false)} />
+                            </label>
+                            <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>Max 1MB</span>
+                          </div>
                         )}
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
